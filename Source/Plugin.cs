@@ -1,21 +1,19 @@
 ﻿using BepInEx.Logging;
 using BepInEx;
 using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SpeedRave.Patches;
+using UnityEngine;
 
 namespace SpeedRave
 {
     [BepInPlugin(modGUID, modName, modVersion)]
     public class Plugin : BaseUnityPlugin
     {
-        private const string modGUID = "SpeedRave";
-        private const string modName = "SpeedRave";
-        private const string modVersion = "1.0.0.0";
+        public const string modGUID = "SpeedRave";
+        public const string modName = "SpeedRave";
+        public const string modVersion = "0.6";
+
+        private GameObject _mod;
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -29,20 +27,21 @@ namespace SpeedRave
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
         }
 
-        void Awake()
-        {
-            if (Instance == null)
+         void Awake()
             {
-                Instance = this;
+                _mod = new GameObject("SpeedRaveGUI");
+                _mod.AddComponent<GUIComponent>();
+                GameObject.DontDestroyOnLoad(_mod);
+                if (Instance == null)
+                {
+                    Instance = this;
+                }
+                mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
+
+                harmony.PatchAll(typeof(QuitToMenuPatch));
+                harmony.PatchAll(typeof(RemoveMusicPatch));
+                harmony.PatchAll(typeof(TitlePatch));
+                mls.LogInfo(RemoveMusicPatch.Use.ToString());
             }
-
-            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
-
-            harmony.PatchAll(typeof(QuitToMenuPatch));
-            harmony.PatchAll(typeof(RemoveMusicPatch));
-            harmony.PatchAll(typeof(TitlePatch));
-            mls.LogInfo(RemoveMusicPatch.Use.ToString());
-        }
-
     }
 }
