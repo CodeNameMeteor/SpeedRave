@@ -17,4 +17,5 @@
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
 * Download [BepInEx](https://github.com/BepInEx/BepInEx/releases/).
 * Extract Bepinex in the game directory ``<game folder>/Sewer Rave``
-* If you want to configure the plugin, after starting the game once with it, go to ``<game folder>/BepInEx/config`` and edit ``SpeedRave.cfg``.
+* Start The Game once, and then add SpeedRave.dll to``<game folder>/BepInEx/Plugins``
+* To Edit the config go to ``<game folder>/BepInEx/config`` and edit ``SpeedRave.cfg``.
