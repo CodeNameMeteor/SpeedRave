@@ -12,6 +12,7 @@
  # To Be Added
   * Save Position
   * Lock Rooms
+  * Autosplitter
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
