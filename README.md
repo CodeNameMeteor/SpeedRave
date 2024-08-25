@@ -12,10 +12,6 @@
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
   * Remove Music (Disabled By Default)
 
-# Requirements
-* Copy of the game
-* [BepInEx](https://github.com/BepInEx/BepInEx/releases/)
-
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
 * Download [BepInEx](https://github.com/BepInEx/BepInEx/releases/).
