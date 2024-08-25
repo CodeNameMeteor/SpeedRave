@@ -2,7 +2,7 @@
  A Speedrun Mod for sewer rave
 
 # Features
- * Room Picker press insert in game
+ * Room Picker. press ``insert`` in game
  * QOL Patches
  # To Be Added
   * Save Position
