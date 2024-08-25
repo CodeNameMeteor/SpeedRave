@@ -20,21 +20,26 @@ namespace SpeedRave
 
         private Rect winRect = new(20, 20, 275, 130);
 
+        public static bool Use;
+
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Insert))
+            if (Use)
             {
-                showGUI = !showGUI;
-            }
-            if (Input.GetKeyDown(KeyCode.J) && sceneIndex <= 68)
-            {
-                SceneManager.LoadScene(sceneIndex);
-                sceneIndex++;
-            }
-            if (Input.GetKeyDown(KeyCode.K) && sceneIndex >= 0)
-            {
-                SceneManager.LoadScene(sceneIndex);
-                sceneIndex--;
+                if (Input.GetKeyDown(KeyCode.Insert))
+                {
+                    showGUI = !showGUI;
+                }
+                if (Input.GetKeyDown(KeyCode.J) && sceneIndex <= 68)
+                {
+                    SceneManager.LoadScene(sceneIndex);
+                    sceneIndex++;
+                }
+                if (Input.GetKeyDown(KeyCode.K) && sceneIndex >= 0)
+                {
+                    SceneManager.LoadScene(sceneIndex);
+                    sceneIndex--;
+                }
             }
         }
 

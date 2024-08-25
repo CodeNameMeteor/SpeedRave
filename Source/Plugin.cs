@@ -25,6 +25,7 @@ namespace SpeedRave
         {
             QuitToMenuPatch.Use = Config.Bind("Patches", "Quit To Menu", true).Value;
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
+            GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
         }
 
          void Awake()
