@@ -10,7 +10,7 @@
 
  # Patches
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
-  * Removing Music (Disabled By Default)
+  * Remove Music (Disabled By Default)
 
 # Requirements
 * Copy of the game
