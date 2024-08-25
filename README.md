@@ -4,13 +4,14 @@
 # Features
  * Room Picker. press ``insert`` in game
  * QOL Patches
- # To Be Added
-  * Save Position
-  * Lock Rooms
-
+   
  # Patches
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
   * Remove Music (Disabled By Default)
+    
+ # To Be Added
+  * Save Position
+  * Lock Rooms
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
