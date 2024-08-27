@@ -42,7 +42,6 @@ namespace SpeedRave
                 harmony.PatchAll(typeof(QuitToMenuPatch));
                 harmony.PatchAll(typeof(RemoveMusicPatch));
                 harmony.PatchAll(typeof(TitlePatch));
-                mls.LogInfo(RemoveMusicPatch.Use.ToString());
             }
     }
 }

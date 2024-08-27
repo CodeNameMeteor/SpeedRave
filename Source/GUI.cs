@@ -40,6 +40,15 @@ namespace SpeedRave
                     SceneManager.LoadScene(sceneIndex);
                     sceneIndex--;
                 }
+                var FoodControlArray = FindObjectsOfType(typeof(FoodControl));
+                if (FoodControlArray.Length > 1)
+                {
+                    for (int i = FoodControlArray.Length - 1; i > 0; i--)
+                    {
+                        Destroy(FoodControlArray[i]);
+                    }
+                }          
+                
             }
         }
 
