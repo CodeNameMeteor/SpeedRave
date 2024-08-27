@@ -2,22 +2,21 @@
  A Speedrun Mod for sewer rave
 
 # Features
- * Room Picker press ''insert'' in game
+ * Room Picker. press ``insert`` in game
  * QOL Patches
- # To Be Added
-  * Save Position
-  * Lock Rooms
-
+   
  # Patches
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
   * Remove Music (Disabled By Default)
-
-# Requirements
-* Copy of the game
-* [BepInEx](https://github.com/BepInEx/BepInEx/releases/)
+    
+ # To Be Added
+  * Save Position
+  * Lock Rooms
+  * Autosplitter
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
 * Download [BepInEx](https://github.com/BepInEx/BepInEx/releases/).
-* Extract Bepinex in the game directory ``<game folder>/Sewer Rave``
-* If you want to configure the plugin, after starting the game once with it, go to ``<game folder>/BepInEx/config`` and edit ``SpeedRave.cfg``.
+* Extract Bepinex in the game directory ``<game folder>/SewerRaveWindows``
+* Start The Game once, and then add SpeedRave.dll to``<game folder>/SewerRaveWindows/BepInEx/Plugins``
+* To Edit the config go to ``<game folder>/SewerRaveWindows/BepInEx/config`` and edit ``SpeedRave.cfg``.
