@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.6.1";
+        public const string modVersion = "0.6.5";
 
         private GameObject _mod;
 

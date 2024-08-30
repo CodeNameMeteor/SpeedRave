@@ -18,7 +18,7 @@ namespace SpeedRave
 
         private int sceneIndex = 1;
 
-        private Rect winRect = new(20, 20, 275, 130);
+        private Rect winRect = new(20, 20, 275, 220);
 
         public static bool Use;
 
@@ -30,24 +30,43 @@ namespace SpeedRave
                 {
                     showGUI = !showGUI;
                 }
-                if (Input.GetKeyDown(KeyCode.J) && sceneIndex <= 68)
+                if(showGUI)
                 {
-                    sceneIndex++;
-                    SceneManager.LoadScene(sceneIndex);
-                }
-                if (Input.GetKeyDown(KeyCode.K) && sceneIndex >= 0)
-                {
-                    sceneIndex--;
-                    SceneManager.LoadScene(sceneIndex);
-                }
-                var FoodControlArray = FindObjectsOfType(typeof(FoodControl));
-                if (FoodControlArray.Length > 1)
-                {
-                    for (int i = FoodControlArray.Length - 1; i > 0; i--)
+                    if (Input.GetKeyDown(KeyCode.J) && sceneIndex <= 67)
                     {
-                        Destroy(FoodControlArray[i]);
+                        sceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+                        SceneManager.LoadScene(sceneIndex);
                     }
-                }          
+                    if (Input.GetKeyDown(KeyCode.K) && sceneIndex >= 1)
+                    {
+                        sceneIndex = SceneManager.GetActiveScene().buildIndex - 1;
+                        SceneManager.LoadScene(sceneIndex);
+                    }
+                    var FoodControlArray = FindObjectsOfType<FoodControl>();
+                    if (FoodControlArray.Length > 1)
+                    {
+                        for (int i = FoodControlArray.Length - 1; i > 0; i--)
+                        {
+                            Destroy(FoodControlArray[i]);
+                        }
+                    }
+                    if (Input.GetKeyDown(KeyCode.U))
+                    {
+                        FoodControlArray[0].cheese++;
+                    }
+                    if (Input.GetKeyDown(KeyCode.I))
+                    {
+                        FoodControlArray[0].cheese--;
+                    }
+                    if (Input.GetKeyDown(KeyCode.O))
+                    {
+                        FoodControlArray[0].fruit++;
+                    }
+                    if (Input.GetKeyDown(KeyCode.P))
+                    {
+                        FoodControlArray[0].fruit--;
+                    }
+                }        
                 
             }
         }
@@ -68,6 +87,10 @@ namespace SpeedRave
             GUILayout.Label(currentScene.name);
             GUILayout.Label("Press J To Go To The Next Scene");
             GUILayout.Label("Press K To Go To The Previous Scene");
+            GUILayout.Label("Press U To Add Cheese");
+            GUILayout.Label("Press I To Subtract Cheese");
+            GUILayout.Label("Press O To Add Fruit");
+            GUILayout.Label("Press P To Subtract Fruit");
             /*
             DesiredScene = GUILayout.TextField("EnterScene", 100);
             if (GUILayout.Button("Enter"))
