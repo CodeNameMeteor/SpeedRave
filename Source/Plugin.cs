@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.6.5";
+        public const string modVersion = "0.6.6";
 
         private GameObject _mod;
 
@@ -25,6 +25,7 @@ namespace SpeedRave
         {
             QuitToMenuPatch.Use = Config.Bind("Patches", "Quit To Menu", true).Value;
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
+            QuickStartPatch.Use = Config.Bind("Patches", "QuickStart", true).Value;
             GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
         }
 
@@ -42,6 +43,7 @@ namespace SpeedRave
                 harmony.PatchAll(typeof(QuitToMenuPatch));
                 harmony.PatchAll(typeof(RemoveMusicPatch));
                 harmony.PatchAll(typeof(TitlePatch));
+                harmony.PatchAll(typeof(QuickStartPatch));
             }
     }
 }
