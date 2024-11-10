@@ -7,6 +7,7 @@
    
  # Patches
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
+  * Pressing Space in the main menu will start the game (Enabled By Default)
   * Remove Music (Disabled By Default)
     
  # To Be Added
