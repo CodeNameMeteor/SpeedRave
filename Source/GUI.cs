@@ -32,15 +32,31 @@ namespace SpeedRave
                 }
                 if(showGUI)
                 {
-                    if (Input.GetKeyDown(KeyCode.J) && sceneIndex <= 67)
+                    if (Input.GetKeyDown(KeyCode.J) )
                     {
-                        sceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-                        SceneManager.LoadScene(sceneIndex);
+                        if(sceneIndex >= 68)
+                        {
+                            sceneIndex = 0;
+                            SceneManager.LoadScene(sceneIndex);
+                        }
+                        else
+                        {
+                            sceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+                            SceneManager.LoadScene(sceneIndex);
+                        }
                     }
-                    if (Input.GetKeyDown(KeyCode.K) && sceneIndex >= 1)
+                    if (Input.GetKeyDown(KeyCode.K) )
                     {
-                        sceneIndex = SceneManager.GetActiveScene().buildIndex - 1;
-                        SceneManager.LoadScene(sceneIndex);
+                        if(sceneIndex <= 0)
+                        {
+                            sceneIndex = 68;
+                            SceneManager.LoadScene(sceneIndex);
+                        }
+                        else
+                        {
+                            sceneIndex = SceneManager.GetActiveScene().buildIndex - 1;
+                            SceneManager.LoadScene(sceneIndex);
+                        }
                     }
                     var FoodControlArray = FindObjectsOfType<FoodControl>();
                     if (FoodControlArray.Length > 1)
