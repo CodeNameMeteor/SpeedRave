@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.6.6";
+        public const string modVersion = "0.8.0";
 
         private GameObject _mod;
 
@@ -30,20 +30,22 @@ namespace SpeedRave
         }
 
          void Awake()
+         {
+            _mod = new GameObject("SpeedRaveGUI");
+            _mod.AddComponent<GUIComponent>();
+            _mod.AddComponent<Autosplitter>();
+            GameObject.DontDestroyOnLoad(_mod);
+            if (Instance == null)
             {
-                _mod = new GameObject("SpeedRaveGUI");
-                _mod.AddComponent<GUIComponent>();
-                GameObject.DontDestroyOnLoad(_mod);
-                if (Instance == null)
-                {
-                    Instance = this;
-                }
-                mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
-
-                harmony.PatchAll(typeof(QuitToMenuPatch));
-                harmony.PatchAll(typeof(RemoveMusicPatch));
-                harmony.PatchAll(typeof(TitlePatch));
-                harmony.PatchAll(typeof(QuickStartPatch));
+                Instance = this;
             }
+            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
+
+            harmony.PatchAll(typeof(QuitToMenuPatch));
+            harmony.PatchAll(typeof(RemoveMusicPatch));
+            harmony.PatchAll(typeof(TitlePatch));
+            harmony.PatchAll(typeof(QuickStartPatch));
+            harmony.PatchAll(typeof(AutoSplitterPatchs));
+        }
     }
 }

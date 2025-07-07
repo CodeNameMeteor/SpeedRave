@@ -76,7 +76,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoSplitter.cs" />
     <Compile Include="GUI.cs" />
+    <Compile Include="Patches\AutoSplitter.cs" />
     <Compile Include="Patches\QuickStart.cs" />
     <Compile Include="Patches\Title.cs" />
     <Compile Include="Patches\QuitToMenu.cs" />

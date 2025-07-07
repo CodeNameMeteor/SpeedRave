@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,9 +19,16 @@ namespace SpeedRave
 
         private int sceneIndex = 1;
 
-        private Rect winRect = new(20, 20, 275, 220);
+        private Rect winRect = new(20, 20, 275, 270);
 
         public static bool Use;
+
+        private bool locked = false;
+
+        private String lockedScene;
+
+        private Autosplitter autosplitter;
+
 
         private void Update()
         {
@@ -82,11 +90,38 @@ namespace SpeedRave
                     {
                         FoodControlArray[0].fruit--;
                     }
+                    if(Input.GetKeyDown(KeyCode.L) && !locked)
+                    {
+                        lockedScene = SceneManager.GetActiveScene().name;
+                        locked = true;
+                    }
+                    else if(Input.GetKeyDown(KeyCode.L) && locked)
+                    {
+                        locked = false;
+                    }
+                    if (lockedScene != SceneManager.GetActiveScene().name && locked)
+                    {
+                        SceneManager.LoadScene(lockedScene);
+                    }
                 }        
-                
+              
             }
         }
 
+        private void Start()
+        {
+            
+            autosplitter = FindObjectOfType<Autosplitter>();
+            if (autosplitter != null)
+            {
+                autosplitter.ConnectToLiveSplit();
+            }
+            else
+            {
+                Debug.LogError("Autosplitter component not found");
+            }
+            
+        }
         private void OnGUI()
         {
             if (showGUI)
@@ -107,6 +142,8 @@ namespace SpeedRave
             GUILayout.Label("Press I To Subtract Cheese");
             GUILayout.Label("Press O To Add Fruit");
             GUILayout.Label("Press P To Subtract Fruit");
+            GUILayout.Label("Press L To Lock The Scene");
+            GUILayout.Label("Scene locked: " + locked);
             /*
             DesiredScene = GUILayout.TextField("EnterScene", 100);
             if (GUILayout.Button("Enter"))
