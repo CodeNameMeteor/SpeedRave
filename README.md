@@ -4,6 +4,7 @@
 # Features
  * Room Picker. press ``insert`` in game
  * QOL Patches
+ * Autosplitter. Start TCP Server in Livesplit (STILL A WIP)
    
  # Patches
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
@@ -12,8 +13,6 @@
     
  # To Be Added
   * Save Position
-  * Lock Rooms
-  * Autosplitter
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
