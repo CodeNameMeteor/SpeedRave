@@ -13,7 +13,6 @@
     
  # To Be Added
   * Save Position
-  * Autosplitter
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
