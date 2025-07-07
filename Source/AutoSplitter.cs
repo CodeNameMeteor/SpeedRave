@@ -114,7 +114,7 @@ namespace SpeedRave
 
                 //Debug.Log(SceneManager.GetActiveScene().name);
                 //Debug.Log(isLoading);
-                Debug.Log(timerPaused);
+                //Debug.Log(timerPaused);
                 //if (SceneManager.GetActiveScene().name == "Sewer_Start" && !gameStarted && !isLoading)
                 if (SceneManager.GetActiveScene().name == "TitleScreen" && gameStarted)
                 {

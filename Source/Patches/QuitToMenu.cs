@@ -31,6 +31,14 @@ namespace SpeedRave.Patches
                     }
 
                     UnityEngine.Object.Destroy(__instance.gameObject);
+                    
+                    //Object[] allObjects = Object.FindObjectsOfType(typeof(FoodControl));
+                    //foreach (Object obj in allObjects)
+                    //{
+
+                   //     UnityEngine.Object.Destroy(obj);
+                    //}
+                    
                     SceneManager.LoadScene("TitleScreen");
                 }
             }

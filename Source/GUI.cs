@@ -90,7 +90,7 @@ namespace SpeedRave
                     {
                         FoodControlArray[0].fruit--;
                     }
-                    if(Input.GetKeyDown(KeyCode.L) && !locked)
+                    if(Input.GetKeyDown(KeyCode.L) && !locked && SceneManager.GetActiveScene().name != "Sewer_Start")
                     {
                         lockedScene = SceneManager.GetActiveScene().name;
                         locked = true;
@@ -99,9 +99,16 @@ namespace SpeedRave
                     {
                         locked = false;
                     }
-                    if (lockedScene != SceneManager.GetActiveScene().name && locked)
+                    if(locked)
                     {
-                        SceneManager.LoadScene(lockedScene);
+                        if(SceneManager.GetActiveScene().name == "TitleScreen")
+                        {
+                            locked = false;
+                        }
+                        else if(lockedScene != SceneManager.GetActiveScene().name)
+                        {
+                            SceneManager.LoadScene(lockedScene);
+                        }
                     }
                 }        
               
