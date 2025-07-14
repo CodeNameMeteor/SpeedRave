@@ -10,6 +10,7 @@
   * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
   * Pressing Space in the main menu will start the game (Enabled By Default)
   * Remove Music (Disabled By Default)
+  * Modified Seed Generation Allowing For Set Seed Runs (Thanks To <a href="https://github.com/Som1Lse">Som1Lse</a>)
     
  # To Be Added
   * Save Position
