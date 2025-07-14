@@ -29,6 +29,10 @@ namespace SpeedRave
             GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
             SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
             Autosplitter.Use = Config.Bind("Autosplitter", "Autosplitter", true).Value;
+            Autosplitter.twentyResourceSplit = Config.Bind("AutoSplitter", "Twenty Resource Split", false).Value;
+            Autosplitter.twentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false).Value;
+            Autosplitter.keySplit = Config.Bind("AutoSplitter", "Key Split", false).Value;
+            Autosplitter.itemSplit = Config.Bind("AutoSplitter", "Item Split", false).Value;
         }
 
          void Awake()

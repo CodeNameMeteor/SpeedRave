@@ -26,9 +26,14 @@ namespace SpeedRave
         public int itemCount;
         public static bool isLoading = false;
         public bool gotResources = false;
-        public bool gotSnake = false;
         public bool gotFruit = false;
-        public bool gotPossum = false;
+        public bool gotPizza = false;
+        public bool gotMug = false;
+        public bool gotPyramid = false;
+        public bool gotBottlecap = false;
+        public bool gotDuck = false;
+        public bool gotKey = false;
+
         public FoodControl[] FoodControlArray;
 
         public bool IsConnectedToLivesplit = false;
@@ -44,6 +49,12 @@ namespace SpeedRave
         private NetworkStream Stream = null;
 
         public static bool Use;
+        public static bool twentyResourceSplit;
+        public static bool keySplit;
+        public static bool twentyFruitSplit;
+        public static bool itemSplit;
+
+
 
         private const int BUFFER_SIZE = 1024;
 
@@ -110,36 +121,59 @@ namespace SpeedRave
                     AttemptSendCommand("unpausegametime");
                     AttemptSendCommand("reset");
                     AttemptSendCommand("starttimer");
-                    //FoodControlArray = FindObjectsOfType<FoodControl>();
+                    FoodControlArray = FindObjectsOfType<FoodControl>();
                     gameStarted = true;
                 }
                 if (gameStarted )
                 {
-                    /*
-                    if((FoodControlArray[0].cheese + FoodControlArray[0].fruit >= 20) && !gotResources)
+                    
+                    if((FoodControlArray[0].cheese + FoodControlArray[0].fruit >= 20) && !gotResources && twentyResourceSplit)
                     {
                         AttemptSendCommand("split");
                         gotResources = true;
                     }
-                    
-                    else if(FoodControlArray[0].fruit >= 20 && gotResources)
+                    if(FoodControlArray[0].fruit >= 20 && !gotFruit && twentyFruitSplit)
                     {
                         AttemptSendCommand("split");
                         gotFruit = true;
                     }
-                    /*
-                    else if (gotResources && SceneManager.GetActiveScene().name == "JasmineRoom1" && !gotSnake)
+                    if (keySplit)
                     {
-                        AttemptSendCommand("split");
-                        gotSnake = true;
+                        if (FoodControlArray[0].haveKey && !gotKey)
+                        {
+                            AttemptSendCommand("split");
+                            gotKey = true;
+                        }
                     }
-                    
-                    else if (gotFruit && SceneManager.GetActiveScene().name == "PossumQueenRoom1" && !gotPossum )
+
+                    if(itemSplit)
                     {
-                        AttemptSendCommand("split");
-                        gotPossum = true;
+                        if(FoodControlArray[0].hasBottlecap && !gotBottlecap)
+                        {
+                            AttemptSendCommand("split");
+                            gotBottlecap = true;
+                        }
+                        else if(FoodControlArray[0].hasPyramid && !gotPyramid)
+                        {
+                            AttemptSendCommand("split");
+                            gotPyramid = true;
+                        }
+                        else if(FoodControlArray[0].hasMug && !gotMug)
+                        {
+                            AttemptSendCommand("split");
+                            gotMug = true;
+                        }
+                        else if(FoodControlArray[0].hasDuck && !gotDuck)
+                        {
+                            AttemptSendCommand("split");
+                            gotDuck = true;
+                        }
+                        else if (FoodControlArray[0].hasPizza && !gotPizza)
+                        {
+                            AttemptSendCommand("split");
+                            gotPizza = true;
+                        }
                     }
-                    */
                     if (SceneManager.GetActiveScene().name.Contains("ending") )
                     {
                         AttemptSendCommand("split");
