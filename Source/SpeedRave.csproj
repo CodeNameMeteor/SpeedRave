@@ -38,6 +38,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
     <Reference Include="BepInEx">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
@@ -80,6 +84,7 @@
     <Compile Include="GUI.cs" />
     <Compile Include="Patches\AutoSplitter.cs" />
     <Compile Include="Patches\QuickStart.cs" />
+    <Compile Include="Patches\SetSeed.cs" />
     <Compile Include="Patches\Title.cs" />
     <Compile Include="Patches\QuitToMenu.cs" />
     <Compile Include="Patches\RemoveMusic.cs" />

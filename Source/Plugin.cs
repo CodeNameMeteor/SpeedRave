@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.8.0";
+        public const string modVersion = "0.9.0";
 
         private GameObject _mod;
 
@@ -27,6 +27,8 @@ namespace SpeedRave
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
             QuickStartPatch.Use = Config.Bind("Patches", "QuickStart", true).Value;
             GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
+            SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
+            Autosplitter.Use = Config.Bind("Autosplitter", "Autosplitter", true).Value;
         }
 
          void Awake()
@@ -46,6 +48,7 @@ namespace SpeedRave
             harmony.PatchAll(typeof(TitlePatch));
             harmony.PatchAll(typeof(QuickStartPatch));
             harmony.PatchAll(typeof(AutoSplitterPatchs));
+            harmony.PatchAll(typeof(SetSeedPatchs));
         }
     }
 }

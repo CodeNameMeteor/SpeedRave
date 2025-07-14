@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityStandardAssets.Characters.FirstPerson;
 
 namespace SpeedRave
 {
@@ -13,13 +14,15 @@ namespace SpeedRave
     {
         private bool showGUI = false;
 
+        private bool trainerToggle = false;
+
         //private string DesiredScene = "";
 
         private Scene currentScene;
 
         private int sceneIndex = 1;
 
-        private Rect winRect = new(20, 20, 275, 270);
+        private Rect winRect = new(20, 20, 275, 550);
 
         public static bool Use;
 
@@ -29,14 +32,18 @@ namespace SpeedRave
 
         private Autosplitter autosplitter;
 
+        private string seedInput = "";         // the string typed by user
+        private int parsedSeed = 0;            // the parsed seed (optional)
+
 
         private void Update()
         {
             if (Use)
             {
+
                 if (Input.GetKeyDown(KeyCode.Insert))
                 {
-                    showGUI = !showGUI;
+                    showGUI = !showGUI;      
                 }
                 if(showGUI)
                 {
@@ -140,17 +147,46 @@ namespace SpeedRave
         private void WinProc(int id)
         {
             currentScene = SceneManager.GetActiveScene();
+            GUILayout.Label("Connected To LiveSplit:" + autosplitter.IsConnectedToLivesplit);
+            if (GUILayout.Button("Connect") && !autosplitter.IsConnectedToLivesplit)
+            {
+                autosplitter.ConnectToLiveSplit();
+            }
+            GUILayout.Label("Seed:" + Patches.SetSeedPatchs.Seed);
+            GUILayout.Label("Enter Seed:");
+            seedInput = GUILayout.TextField(seedInput, 11);
+            if (GUILayout.Button("Set Seed"))
+            {
+                if (int.TryParse(seedInput, out parsedSeed))
+                {
+                    Patches.SetSeedPatchs.Seed = parsedSeed;
+                    UnityEngine.Random.InitState(parsedSeed);
+                    Patches.SetSeedPatchs.randomSeed = false;
+                    Debug.Log($"[SpeedRave] Seed set to {parsedSeed}");
+                }
+                else
+                {
+                    Debug.LogWarning("[SpeedRave] Invalid seed input!");
+                }
+            }
+            Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, "Use Random Seed");
+            GUILayout.Space(5);
+            trainerToggle = GUILayout.Toggle(trainerToggle, "Enable Trainer");
+            if (trainerToggle)
+            {
+                GUILayout.Label("Current Scene is:");
+                GUILayout.Label(currentScene.name);
+                GUILayout.Label("Press J To Go To The Next Scene");
+                GUILayout.Label("Press K To Go To The Previous Scene");
+                GUILayout.Label("Press U To Add Cheese");
+                GUILayout.Label("Press I To Subtract Cheese");
+                GUILayout.Label("Press O To Add Fruit");
+                GUILayout.Label("Press P To Subtract Fruit");
+                GUILayout.Label("Press L To Lock The Scene");
+                GUILayout.Label("Scene locked: " + locked);
+            }
+            
 
-            GUILayout.Label("Current Scene is:");
-            GUILayout.Label(currentScene.name);
-            GUILayout.Label("Press J To Go To The Next Scene");
-            GUILayout.Label("Press K To Go To The Previous Scene");
-            GUILayout.Label("Press U To Add Cheese");
-            GUILayout.Label("Press I To Subtract Cheese");
-            GUILayout.Label("Press O To Add Fruit");
-            GUILayout.Label("Press P To Subtract Fruit");
-            GUILayout.Label("Press L To Lock The Scene");
-            GUILayout.Label("Scene locked: " + locked);
             /*
             DesiredScene = GUILayout.TextField("EnterScene", 100);
             if (GUILayout.Button("Enter"))

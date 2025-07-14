@@ -25,6 +25,11 @@ namespace SpeedRave
         public bool gameStarted = false;
         public int itemCount;
         public static bool isLoading = false;
+        public bool gotResources = false;
+        public bool gotSnake = false;
+        public bool gotFruit = false;
+        public bool gotPossum = false;
+        public FoodControl[] FoodControlArray;
 
         public bool IsConnectedToLivesplit = false;
 
@@ -38,19 +43,10 @@ namespace SpeedRave
         private TcpClient Client = null;
         private NetworkStream Stream = null;
 
+        public static bool Use;
 
         private const int BUFFER_SIZE = 1024;
 
-
-
-
-        public void Awake()
-        {
-        }
-
-        public void Start()
-        {
-        }
 
 
 
@@ -58,7 +54,7 @@ namespace SpeedRave
         {
             try
             {
-                if (!IsConnectedToLivesplit)
+                if (!IsConnectedToLivesplit && Use)
                 {
                     Byte[] data = new Byte[256];
                     String responseData = String.Empty;
@@ -91,17 +87,6 @@ namespace SpeedRave
         }
 
 
-        private void UpdateFields()
-        {
-        }
-
-        private void CacheExitSequenceMethod()
-        {
-        }
-
-        public void ExitSequence()
-        {
-        }
 
 
 
@@ -110,7 +95,6 @@ namespace SpeedRave
 
             if (IsConnectedToLivesplit || debug)
             {
-                UpdateFields();
 
                 //Debug.Log(SceneManager.GetActiveScene().name);
                 //Debug.Log(isLoading);
@@ -118,95 +102,60 @@ namespace SpeedRave
                 //if (SceneManager.GetActiveScene().name == "Sewer_Start" && !gameStarted && !isLoading)
                 if (SceneManager.GetActiveScene().name == "TitleScreen" && gameStarted)
                 {
-                    try
-                    {
-                        Stream.Write(Encoding.UTF8.GetBytes("reset\r\n"), 0, Encoding.UTF8.GetBytes("reset\r\n").Length);
-                        gameStarted = false;
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"An unexpected error occurred: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
+                    AttemptSendCommand("reset");
+                    gameStarted = false;
                 }
                 if (SceneManager.GetActiveScene().name == "Sewer_Start" && !gameStarted)
                 {
-                    try
-                    {
-                        Stream.Write(Encoding.UTF8.GetBytes("unpausegametime\r\n"), 0, Encoding.UTF8.GetBytes("unpausegametime\r\n").Length);
-                        Stream.Write(Encoding.UTF8.GetBytes("reset\r\n"), 0, Encoding.UTF8.GetBytes("reset\r\n").Length);
-                        Stream.Write(Encoding.UTF8.GetBytes("starttimer\r\n"), 0, Encoding.UTF8.GetBytes("starttimer\r\n").Length);
-                        gameStarted = true;
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"An unexpected error occurred: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
+                    AttemptSendCommand("unpausegametime");
+                    AttemptSendCommand("reset");
+                    AttemptSendCommand("starttimer");
+                    //FoodControlArray = FindObjectsOfType<FoodControl>();
+                    gameStarted = true;
                 }
-                if (SceneManager.GetActiveScene().name.Contains("ending") && gameStarted)
+                if (gameStarted )
                 {
-                    try
+                    /*
+                    if((FoodControlArray[0].cheese + FoodControlArray[0].fruit >= 20) && !gotResources)
                     {
-                        Stream.Write(Encoding.UTF8.GetBytes("split\r\n"), 0, Encoding.UTF8.GetBytes("split\r\n").Length);
+                        AttemptSendCommand("split");
+                        gotResources = true;
+                    }
+                    
+                    else if(FoodControlArray[0].fruit >= 20 && gotResources)
+                    {
+                        AttemptSendCommand("split");
+                        gotFruit = true;
+                    }
+                    /*
+                    else if (gotResources && SceneManager.GetActiveScene().name == "JasmineRoom1" && !gotSnake)
+                    {
+                        AttemptSendCommand("split");
+                        gotSnake = true;
+                    }
+                    
+                    else if (gotFruit && SceneManager.GetActiveScene().name == "PossumQueenRoom1" && !gotPossum )
+                    {
+                        AttemptSendCommand("split");
+                        gotPossum = true;
+                    }
+                    */
+                    if (SceneManager.GetActiveScene().name.Contains("ending") )
+                    {
+                        AttemptSendCommand("split");
                         gameStarted = false;
                     }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"An unexpected error occurred: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
+
                 }
-                if(isLoading && !timerPaused)
+                if (isLoading && !timerPaused)
                 {
-                    try
-                    {
-                        Stream.Write(Encoding.UTF8.GetBytes("pausegametime\r\n"), 0, Encoding.UTF8.GetBytes("pausegametime\r\n").Length);
-                        timerPaused = true;
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"An unexpected error occurred: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
+                    AttemptSendCommand("pausegametime");
+                    timerPaused = true;
                 }
-                if(timerPaused && (!isLoading || SceneManager.GetActiveScene().name == "TitleScreen"))
+                else if(timerPaused && (!isLoading || SceneManager.GetActiveScene().name == "TitleScreen"))
                 {
-                    try
-                    {
-                        Stream.Write(Encoding.UTF8.GetBytes("unpausegametime\r\n"), 0, Encoding.UTF8.GetBytes("unpausegametime\r\n").Length);
-                        timerPaused = false;
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"An unexpected error occurred: {ex.Message}");
-                        IsConnectedToLivesplit = false;
-                    }
+                    AttemptSendCommand("unpausegametime");
+                    timerPaused = false;
                 }
             }
         }
@@ -214,7 +163,23 @@ namespace SpeedRave
 
 
 
-
+        public void AttemptSendCommand(String command)
+        {
+            try
+            {
+                Stream.Write(Encoding.UTF8.GetBytes(command + "\r\n"), 0, Encoding.UTF8.GetBytes(command + "\r\n").Length);
+            }
+            catch (SocketException ex)
+            {
+                Debug.LogError($"Error connecting to LiveSplit: {ex.Message}");
+                IsConnectedToLivesplit = false;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"An unexpected error occurred: {ex.Message}");
+                IsConnectedToLivesplit = false;
+            }
+        }
 
         public void Update()
         {
