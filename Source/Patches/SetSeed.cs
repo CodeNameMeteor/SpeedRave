@@ -9,6 +9,7 @@ namespace SpeedRave.Patches
     {
         public static bool Use;
         public static int Seed;
+        public static int lastRandomSeed = 0;
         public static bool randomSeed = true;
 
         static Random.State state = Random.state;
@@ -70,6 +71,7 @@ namespace SpeedRave.Patches
                         Seed = Seed * 0x6C078965 + 1;
                     }
                     Debug.Log($"[SpeedRave] Seed set to {Seed}");
+                    lastRandomSeed = Seed;
                     StoreState();
                     Random.InitState(Seed);
                     RestoreState();

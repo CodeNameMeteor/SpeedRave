@@ -169,6 +169,11 @@ namespace SpeedRave
                     Debug.LogWarning("[SpeedRave] Invalid seed input!");
                 }
             }
+            if (GUILayout.Button("Set Last Random Seed") && Patches.SetSeedPatchs.lastRandomSeed != 0)
+            {
+                Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
+                Patches.SetSeedPatchs.randomSeed = false;
+            }
             Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, "Use Random Seed");
             GUILayout.Space(5);
             trainerToggle = GUILayout.Toggle(trainerToggle, "Enable Trainer");
