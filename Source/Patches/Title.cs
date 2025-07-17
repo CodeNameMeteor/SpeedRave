@@ -9,13 +9,10 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         static void TitleColorStartPatch(TitleColor __instance)
         {
-            // Use reflection to access the private field
             var titleTextField = AccessTools.Field(typeof(TitleColor), "titleText");
 
-            // Get the value of the private field
             var titleText = (SuperTextMesh)titleTextField.GetValue(__instance);
 
-            // Modify the text
             titleText.text = "SEWER RAVE+";
         }
 
@@ -24,13 +21,10 @@ namespace SpeedRave.Patches
         [HarmonyPrefix]
         static void TitleColorChangeColorPatch(TitleColor __instance)
         {
-            // Use reflection to access the private field
             var titleTextField = AccessTools.Field(typeof(TitleColor), "titleText");
 
-            // Get the value of the private field
             var titleText = (SuperTextMesh)titleTextField.GetValue(__instance);
 
-            // Modify the text
             titleText.text = "SEWER RAVE+";
         }
     }

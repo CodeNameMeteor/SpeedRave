@@ -47,12 +47,15 @@ namespace SpeedRave
             }
             mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
 
+            
             harmony.PatchAll(typeof(QuitToMenuPatch));
             harmony.PatchAll(typeof(RemoveMusicPatch));
             harmony.PatchAll(typeof(TitlePatch));
             harmony.PatchAll(typeof(QuickStartPatch));
             harmony.PatchAll(typeof(AutoSplitterPatchs));
             harmony.PatchAll(typeof(SetSeedPatchs));
+            harmony.PatchAll(typeof(SceneLock));
+            harmony.PatchAll(typeof(CursorLockFix));
         }
     }
 }

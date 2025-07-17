@@ -94,5 +94,55 @@ namespace SpeedRave.Patches
                 __instance.inventoryText.Text = "CHEESE: " + __instance.cheese.ToString() + "\nFRUIT: " + __instance.fruit.ToString() + "\nSEED: " + Seed.ToString();
             }
         }
+
+        [HarmonyPatch(typeof(TitleScreenControler), "Update")]
+        [HarmonyPostfix]
+        public static void ModifyTitleButtons(TitleScreenControler __instance)
+        {
+            ModifyButtonText(__instance.titleButtons, "ExitButton", Seed.ToString());
+        }
+        [HarmonyPatch(typeof(TitleScreenControler), "Start")]
+        [HarmonyPostfix]
+        public static void ModifyTitleButtonPositon(TitleScreenControler __instance)
+        {
+            ModifyButtonPosition(__instance.titleButtons, "ExitButton", new Vector3(-60.0f,0,0));
+        }
+
+        private static void ModifyButtonText(GameObject parent, string buttonName, string newText)
+        {
+            Transform buttonTransform = parent.transform.Find(buttonName);
+            if (buttonTransform == null)
+            {
+                Debug.Log($"Button '{buttonName}' not found.");
+                return;
+            }
+
+            var superText = buttonTransform.GetComponentInChildren<SuperTextMesh>();
+            if (superText == null)
+            {
+                Debug.Log($"SuperText component not found in '{buttonName}'.");
+                return;
+            }
+            superText.text = newText;
+            superText.Rebuild();
+        }
+        private static void ModifyButtonPosition(GameObject parent, string buttonName, Vector3 Position)
+        {
+            Transform buttonTransform = parent.transform.Find(buttonName);
+            if (buttonTransform == null)
+            {
+                Debug.Log($"Button '{buttonName}' not found.");
+                return;
+            }
+
+            var superText = buttonTransform.GetComponentInChildren<SuperTextMesh>();
+            if (superText == null)
+            {
+                Debug.Log($"SuperText component not found in '{buttonName}'.");
+                return;
+            }
+            superText.transform.position = superText.transform.position + Position;
+            superText.Rebuild();
+        }
     }
 }

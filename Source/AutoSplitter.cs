@@ -123,6 +123,14 @@ namespace SpeedRave
                     AttemptSendCommand("starttimer");
                     FoodControlArray = FindObjectsOfType<FoodControl>();
                     gameStarted = true;
+                    gotBottlecap = false;
+                    gotFruit = false;
+                    gotResources = false;
+                    gotPizza = false;
+                    gotMug = false;
+                    gotPyramid = false;
+                    gotKey = false;
+                    gotDuck = false;
                 }
                 if (gameStarted )
                 {
@@ -178,6 +186,7 @@ namespace SpeedRave
                     {
                         AttemptSendCommand("split");
                         gameStarted = false;
+
                     }
 
                 }
