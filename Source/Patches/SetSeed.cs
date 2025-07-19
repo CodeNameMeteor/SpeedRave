@@ -12,6 +12,10 @@ namespace SpeedRave.Patches
         public static int lastRandomSeed = 0;
         public static bool randomSeed = true;
 
+        public static GameObject seedText;
+        public static GameObject foodControlSeedText;
+
+
         static Random.State state = Random.state;
         static Random.State messyState = Random.state;
 
@@ -63,6 +67,7 @@ namespace SpeedRave.Patches
             {
                 if(randomSeed)
                 {
+                    
                     uint[] state = new uint[4];
                     Seed = (int)DateTime.Now.Ticks;
                     for (int i = 0; i < 4; ++i)
@@ -72,6 +77,7 @@ namespace SpeedRave.Patches
                     }
                     Debug.Log($"[SpeedRave] Seed set to {Seed}");
                     lastRandomSeed = Seed;
+                    
                     StoreState();
                     Random.InitState(Seed);
                     RestoreState();
@@ -85,64 +91,60 @@ namespace SpeedRave.Patches
             }
 
         }
-        [HarmonyPatch(typeof(FoodControl), "RefreshValues")]
+        [HarmonyPatch(typeof(FoodControl), "Start")]
         [HarmonyPostfix]
         public static void addSeedText(FoodControl __instance)
         {
             if (Use)
             {
-                __instance.inventoryText.Text = "CHEESE: " + __instance.cheese.ToString() + "\nFRUIT: " + __instance.fruit.ToString() + "\nSEED: " + Seed.ToString();
+                foodControlSeedText = GameObject.Instantiate(__instance.inventoryText.gameObject, __instance.inventoryText.transform);
+                foodControlSeedText.name = "seedText";
+                SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
+                seedSTM.text = "Seed: " + Seed;
+                seedSTM.transform.localPosition -= new Vector3(850f, 540f, 0f);
+                //__instance.inventoryText.Text = "CHEESE: " + __instance.cheese.ToString() + "\nFRUIT: " + __instance.fruit.ToString() + "\nSEED: " + Seed.ToString();
             }
         }
-
+        [HarmonyPatch(typeof(FoodControl), "RefreshValues")]
+        [HarmonyPostfix]
+        public static void UpdateSeedText(FoodControl __instance)
+        {
+            if (Use)
+            {
+                SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
+                seedSTM.text = "Seed: " + Seed;
+            }
+        }
         [HarmonyPatch(typeof(TitleScreenControler), "Update")]
         [HarmonyPostfix]
         public static void ModifyTitleButtons(TitleScreenControler __instance)
         {
-            ModifyButtonText(__instance.titleButtons, "ExitButton", Seed.ToString());
+
+            if(Use)
+            {
+                SuperTextMesh seedSTM = seedText.GetComponent<SuperTextMesh>();
+                seedSTM.text = "Seed: " + Seed;
+            }
         }
         [HarmonyPatch(typeof(TitleScreenControler), "Start")]
         [HarmonyPostfix]
         public static void ModifyTitleButtonPositon(TitleScreenControler __instance)
         {
-            ModifyButtonPosition(__instance.titleButtons, "ExitButton", new Vector3(-60.0f,0,0));
-        }
+            //ModifyButtonPosition(__instance.titleButtons, "ExitButton", new Vector3(-60.0f,0,0));
+            // Clone the original button GameObject
+            if(seedText == null || Use)
+            {
+                Transform startButton = __instance.titleButtons.transform.Find("CreditsButton");
 
-        private static void ModifyButtonText(GameObject parent, string buttonName, string newText)
-        {
-            Transform buttonTransform = parent.transform.Find(buttonName);
-            if (buttonTransform == null)
-            {
-                Debug.Log($"Button '{buttonName}' not found.");
-                return;
-            }
+                SuperTextMesh originalText = startButton.GetComponentInChildren<SuperTextMesh>();
 
-            var superText = buttonTransform.GetComponentInChildren<SuperTextMesh>();
-            if (superText == null)
-            {
-                Debug.Log($"SuperText component not found in '{buttonName}'.");
-                return;
-            }
-            superText.text = newText;
-            superText.Rebuild();
-        }
-        private static void ModifyButtonPosition(GameObject parent, string buttonName, Vector3 Position)
-        {
-            Transform buttonTransform = parent.transform.Find(buttonName);
-            if (buttonTransform == null)
-            {
-                Debug.Log($"Button '{buttonName}' not found.");
-                return;
+                seedText = GameObject.Instantiate(originalText.gameObject, startButton);
+                seedText.name = "SeedText";
+
+                //moving the text to a better position
+                seedText.transform.localPosition -= new Vector3(760f, 0f, 0f);
             }
 
-            var superText = buttonTransform.GetComponentInChildren<SuperTextMesh>();
-            if (superText == null)
-            {
-                Debug.Log($"SuperText component not found in '{buttonName}'.");
-                return;
-            }
-            superText.transform.position = superText.transform.position + Position;
-            superText.Rebuild();
         }
     }
 }

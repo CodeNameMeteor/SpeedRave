@@ -14,6 +14,11 @@ namespace SpeedRave
 {
     public class GUIComponent : MonoBehaviour
     {
+
+        public const int X = 20;
+        public const int Y = 20;
+        public const int WIDTH = 275;
+        public const int HEIGHT = 550;
         public static bool showGUI = false;
 
         private bool trainerToggle = false;
@@ -24,7 +29,7 @@ namespace SpeedRave
 
         private int sceneIndex = 1;
 
-        private Rect winRect = new(20, 20, 275, 550);
+        private Rect winRect = new(X, Y, WIDTH, HEIGHT);
 
         public static bool Use;
 
@@ -91,9 +96,9 @@ namespace SpeedRave
                         }
                     }
                     var player = GameObject.FindGameObjectWithTag("Player");
-                    var playerControls = player.GetComponent<FirstPersonController>();
-                    if (Input.GetKeyDown(KeyCode.Z))
+                    if (Input.GetKeyDown(KeyCode.Z) && player != null)
                     {
+                        var playerControls = player.GetComponent<FirstPersonController>();
                         storedPosition = player.transform.position;
 
                         var mouseLook = mouseLookField.GetValue(playerControls);
@@ -110,8 +115,9 @@ namespace SpeedRave
                         }
 
                     }
-                    if (Input.GetKeyDown(KeyCode.X))
+                    if (Input.GetKeyDown(KeyCode.X) && player != null)
                     {
+                        var playerControls = player.GetComponent<FirstPersonController>();
                         player.transform.position = storedPosition;
                         var mouseLook = mouseLookField.GetValue(playerControls);
                         if (mouseLook != null)
