@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.9.0";
+        public const string modVersion = "0.9.5";
 
         private GameObject _mod;
 
@@ -24,11 +24,23 @@ namespace SpeedRave
         public Plugin()
         {
             QuitToMenuPatch.Use = Config.Bind("Patches", "Quit To Menu", true).Value;
+
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
+
             QuickStartPatch.Use = Config.Bind("Patches", "QuickStart", true).Value;
+
             GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
+            GUIComponent.addCheeseBind = Config.Bind("Binds", "Add Cheese Bind", "U").Value;
+            GUIComponent.removeCheeseBind = Config.Bind("Binds", "Remove Cheese Bind", "I").Value;
+            GUIComponent.addFruitBind = Config.Bind("Binds", "Add Fruit Bind", "O").Value;
+            GUIComponent.removeFruitBind = Config.Bind("Binds", "Remove Fruit Bind", "P").Value;
+            GUIComponent.lockBind = Config.Bind("Binds", "Scene Lock Bind", "L").Value;
+            GUIComponent.storePositionBind = Config.Bind("Binds", "Store Position Bind", "Z").Value;
+            GUIComponent.restorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X").Value;
+
             SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
-            Autosplitter.Use = Config.Bind("Autosplitter", "Autosplitter", true).Value;
+
+            Autosplitter.Use = Config.Bind("AutoSplitter", "Autosplitter Enabled", true).Value;
             Autosplitter.twentyResourceSplit = Config.Bind("AutoSplitter", "Twenty Resource Split", false).Value;
             Autosplitter.twentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false).Value;
             Autosplitter.keySplit = Config.Bind("AutoSplitter", "Key Split", false).Value;

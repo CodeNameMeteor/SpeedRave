@@ -115,6 +115,14 @@ namespace SpeedRave
 
         public static bool locked = false;
 
+        public static string addCheeseBind = "u";
+        public static string removeCheeseBind = "i";
+        public static string addFruitBind = "o";
+        public static string removeFruitBind = "p";
+        public static string lockBind = "l";
+        public static string storePositionBind = "z";
+        public static string restorePositionBind = "x";
+
 
         private Autosplitter autosplitter;
 
@@ -152,7 +160,7 @@ namespace SpeedRave
                         }
                 }
                 var player = GameObject.FindGameObjectWithTag("Player");
-                if (Input.GetKeyDown(KeyCode.Z) && player != null)
+                if (Input.GetKeyDown(storePositionBind.ToLower()) && player != null)
                 {
                     var playerControls = player.GetComponent<FirstPersonController>();
                     storedPosition = player.transform.position;
@@ -170,7 +178,7 @@ namespace SpeedRave
                         }
                     }
                 }
-                if (Input.GetKeyDown(KeyCode.X) && player != null)
+                if (Input.GetKeyDown(restorePositionBind.ToLower()) && player != null)
                 {
                     var playerControls = player.GetComponent<FirstPersonController>();
                     player.transform.position = storedPosition;
@@ -188,28 +196,29 @@ namespace SpeedRave
                         }
                     }
                 }
-                if (Input.GetKeyDown(KeyCode.U))
+                    
+                if (Input.GetKeyDown(addCheeseBind.ToLower()))
                 {
                     FoodControlArray[0].cheese++;
                 }
-                if (Input.GetKeyDown(KeyCode.I))
+                if (Input.GetKeyDown(removeCheeseBind.ToLower()))
                 {
                     FoodControlArray[0].cheese--;
                 }
-                if (Input.GetKeyDown(KeyCode.O))
+                if (Input.GetKeyDown(addFruitBind.ToLower()))
                 {
                     FoodControlArray[0].fruit++;
                 }
-                if (Input.GetKeyDown(KeyCode.P))
+                if (Input.GetKeyDown(removeFruitBind.ToLower()))
                 {
                     FoodControlArray[0].fruit--;
                 }
-                if (Input.GetKeyDown(KeyCode.L) && !locked)
+                if (Input.GetKeyDown(lockBind.ToLower()) && !locked)
                 {
                     Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
                     locked = true;
                 }
-                else if (Input.GetKeyDown(KeyCode.L) && locked)
+                else if (Input.GetKeyDown(lockBind.ToLower()) && locked)
                 {
                     locked = false;
                 }
@@ -231,7 +240,6 @@ namespace SpeedRave
             {
                 Debug.LogError("Autosplitter component not found");
             }
-            
         }
         private void OnGUI()
         {

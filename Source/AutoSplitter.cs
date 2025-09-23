@@ -54,8 +54,6 @@ namespace SpeedRave
         public static bool twentyFruitSplit;
         public static bool itemSplit;
 
-
-
         private const int BUFFER_SIZE = 1024;
 
 
