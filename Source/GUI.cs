@@ -14,12 +14,83 @@ namespace SpeedRave
 {
     public class GUIComponent : MonoBehaviour
     {
+        public static string[] Scenes = {
+            "BattleRoom1",
+            "BlubRoom",
+            "BrickRollRoom1",
+            "CaveRoom1",
+            "ComplexRoom1",
+            "Credits",
+            "DeerRoom1",
+            "DeerRoom2",
+            "EnterCatRoom1",
+            "EnterTrainRoom",
+            "ExitRoom1",
+            "FaultRoom1",
+            "FightRoom1",
+            "FishingRoom1",
+            "FloatRoom1",
+            "FogRoom1",
+            "FogRoom2",
+            "GunStore1",
+            "HallRoom1",
+            "IceRoom1",
+            "JumpRoom1",
+            "JumpRoom2",
+            "JumpRoom3",
+            "JumpRoom4",
+            "JumpRoom5",
+            "JasmineRoom1",
+            "LadySaytennRoom",
+            "LampRoom1",
+            "LampRoom2",
+            "LonelyRoom1",
+            "LoseRoom1",
+            "MicroGameRoom1",
+            "NarrowRoom1",
+            "NarrowRoom2",
+            "NarrowRoom3",
+            "NarrowRoom4",
+            "NarrowRoom5",
+            "PianoRoom1",
+            "PitRoom1",
+            "PitRoom2",
+            "PitRoom3",
+            "PitRoom4",
+            "PitRoom5",
+            "Plaguending",
+            "PossumQueenRoom1",
+            "PunchRoom1",
+            "RapBattleRoom1",
+            "RapBattleRoom2",
+            "ScienceRoom1",
+            "Sewer_Start",
+            "SpaceRoom1",
+            "Spaceending",
+            "StretchRoom1",
+            "StretchRoom2",
+            "StretchRoom3",
+            "StudyRoom1",
+            "TallRoom1",
+            "TallRoom2",
+            "TallRoom3",
+            "TheatreRoom1",
+            "TiltRoom1",
+            "TiltRoom2",
+            "TiltRoom3",
+            "TitleScreen",
+            "Truending",
+            "UpgradeRoom1",
+            "WinRoom1"
+        };
 
+        public static int selectedScene = 0;
         public const int X = 20;
         public const int Y = 20;
         public const int WIDTH = 275;
         public const int HEIGHT = 550;
         public static bool showGUI = false;
+        public static bool sceneSelectorShowGUI = false;
 
         private bool trainerToggle = false;
 
@@ -29,7 +100,16 @@ namespace SpeedRave
 
         private int sceneIndex = 1;
 
-        private Rect winRect = new(X, Y, WIDTH, HEIGHT);
+        private const int MAIN_WINDOW_ID = 0;
+        private const int SCENE_WINDOW_ID = 1;
+
+        private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
+        private static Rect sceneWinRect = new(
+            winRect.x + winRect.width + 10, // 10px padding to the right
+            winRect.y,
+            1100,
+            300
+        );
 
         public static bool Use;
 
@@ -57,114 +137,82 @@ namespace SpeedRave
 
                 if (Input.GetKeyDown(KeyCode.Insert))
                 {
-                    showGUI = !showGUI;      
+                    showGUI = !showGUI;   
+                    if(sceneSelectorShowGUI)
+                    {
+                        sceneSelectorShowGUI = false;
+                    }
                 }
-                if(trainerToggle)
+                var FoodControlArray = FindObjectsOfType<FoodControl>();
+                if (FoodControlArray.Length > 1)
                 {
-                    if (Input.GetKeyDown(KeyCode.J) )
-                    {
-                        if(sceneIndex >= 68)
-                        {
-                            sceneIndex = 0;
-                            SceneManager.LoadScene(sceneIndex);
-                        }
-                        else
-                        {
-                            sceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-                            SceneManager.LoadScene(sceneIndex);
-                        }
-                    }
-                    if (Input.GetKeyDown(KeyCode.K) )
-                    {
-                        if(sceneIndex <= 0)
-                        {
-                            sceneIndex = 68;
-                            SceneManager.LoadScene(sceneIndex);
-                        }
-                        else
-                        {
-                            sceneIndex = SceneManager.GetActiveScene().buildIndex - 1;
-                            SceneManager.LoadScene(sceneIndex);
-                        }
-                    }
-                    var FoodControlArray = FindObjectsOfType<FoodControl>();
-                    if (FoodControlArray.Length > 1)
-                    {
-                        for (int i = FoodControlArray.Length - 1; i > 0; i--)
+                    for (int i = FoodControlArray.Length - 1; i > 0; i--)
                         {
                             Destroy(FoodControlArray[i]);
                         }
-                    }
-                    var player = GameObject.FindGameObjectWithTag("Player");
-                    if (Input.GetKeyDown(KeyCode.Z) && player != null)
+                }
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (Input.GetKeyDown(KeyCode.Z) && player != null)
+                {
+                    var playerControls = player.GetComponent<FirstPersonController>();
+                    storedPosition = player.transform.position;
+
+                    var mouseLook = mouseLookField.GetValue(playerControls);
+                    if (mouseLook != null)
                     {
-                        var playerControls = player.GetComponent<FirstPersonController>();
-                        storedPosition = player.transform.position;
+                        object charRotObj = characterTargetRotField.GetValue(mouseLook);
+                        object camRotObj = cameraTargetRotField.GetValue(mouseLook);
 
-                        var mouseLook = mouseLookField.GetValue(playerControls);
-                        if (mouseLook != null)
+                        if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
                         {
-                            object charRotObj = characterTargetRotField.GetValue(mouseLook);
-                            object camRotObj = cameraTargetRotField.GetValue(mouseLook);
-
-                            if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
-                            {
-                                storedCharacterRot = charRot;
-                                storedCameraRot = camRot;
-                            }
-                        }
-
-                    }
-                    if (Input.GetKeyDown(KeyCode.X) && player != null)
-                    {
-                        var playerControls = player.GetComponent<FirstPersonController>();
-                        player.transform.position = storedPosition;
-                        var mouseLook = mouseLookField.GetValue(playerControls);
-                        if (mouseLook != null)
-                        {
-                            characterTargetRotField.SetValue(mouseLook, storedCharacterRot);
-                            cameraTargetRotField.SetValue(mouseLook, storedCameraRot);
-
-                            // Also set actual transforms to match the target rots
-                            var camera = (Camera)cameraField.GetValue(playerControls);                            
-                            if (camera != null)
-                            {
-                                player.transform.localRotation = storedCharacterRot;
-                                camera.transform.localRotation = storedCameraRot;
-                            }
-
-                            
-
+                            storedCharacterRot = charRot;
+                            storedCameraRot = camRot;
                         }
                     }
-                    if (Input.GetKeyDown(KeyCode.U))
+                }
+                if (Input.GetKeyDown(KeyCode.X) && player != null)
+                {
+                    var playerControls = player.GetComponent<FirstPersonController>();
+                    player.transform.position = storedPosition;
+                    var mouseLook = mouseLookField.GetValue(playerControls);
+                    if (mouseLook != null)
                     {
-                        FoodControlArray[0].cheese++;
+                        characterTargetRotField.SetValue(mouseLook, storedCharacterRot);
+                        cameraTargetRotField.SetValue(mouseLook, storedCameraRot);
+                        // Also set actual transforms to match the target rots
+                        var camera = (Camera)cameraField.GetValue(playerControls);
+                        if (camera != null)
+                        {
+                            player.transform.localRotation = storedCharacterRot;
+                            camera.transform.localRotation = storedCameraRot;
+                        }
                     }
-                    if (Input.GetKeyDown(KeyCode.I))
-                    {
-                        FoodControlArray[0].cheese--;
-                    }
-                    if (Input.GetKeyDown(KeyCode.O))
-                    {
-                        FoodControlArray[0].fruit++;
-                    }
-                    if (Input.GetKeyDown(KeyCode.P))
-                    {
-                        FoodControlArray[0].fruit--;
-                    }
-                    if(Input.GetKeyDown(KeyCode.L) && !locked )
-                    {
-                        Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
-                        locked = true;
-                    }
-                    else if(Input.GetKeyDown(KeyCode.L) && locked)
-                    {
-                        locked = false;
-                    }
-                    
-                }        
-              
+                }
+                if (Input.GetKeyDown(KeyCode.U))
+                {
+                    FoodControlArray[0].cheese++;
+                }
+                if (Input.GetKeyDown(KeyCode.I))
+                {
+                    FoodControlArray[0].cheese--;
+                }
+                if (Input.GetKeyDown(KeyCode.O))
+                {
+                    FoodControlArray[0].fruit++;
+                }
+                if (Input.GetKeyDown(KeyCode.P))
+                {
+                    FoodControlArray[0].fruit--;
+                }
+                if (Input.GetKeyDown(KeyCode.L) && !locked)
+                {
+                    Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                    locked = true;
+                }
+                else if (Input.GetKeyDown(KeyCode.L) && locked)
+                {
+                    locked = false;
+                }
             }
         }
 
@@ -189,10 +237,28 @@ namespace SpeedRave
         {
             if (showGUI)
             {
-                winRect = GUI.Window(0, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
+                winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
+            }
+            if(sceneSelectorShowGUI)
+            {
+                sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc,"Scene" );
             }
         }
-        
+
+        private void SceneWinProc(int id)
+        {
+            GUILayout.Label("Select a Scene:");
+
+            selectedScene = GUILayout.SelectionGrid(selectedScene, Scenes, 10);
+
+            if (GUILayout.Button("Go To Scene"))
+            {
+                SceneManager.LoadScene(Scenes[selectedScene]);
+            }
+
+            GUI.DragWindow();
+        }
+
         private void WinProc(int id)
         {
             currentScene = SceneManager.GetActiveScene();
@@ -224,23 +290,18 @@ namespace SpeedRave
                 Patches.SetSeedPatchs.randomSeed = false;
             }
             Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, "Use Random Seed");
-            GUILayout.Space(5);
-            trainerToggle = GUILayout.Toggle(trainerToggle, "Enable Trainer");
-            if (trainerToggle)
+            if (GUILayout.Button("Open Scene Selector"))
             {
-                GUILayout.Label("Current Scene is:");
-                GUILayout.Label(currentScene.name);
-                GUILayout.Label("Press J To Go To The Next Scene");
-                GUILayout.Label("Press K To Go To The Previous Scene");
-                GUILayout.Label("Press U To Add Cheese");
-                GUILayout.Label("Press I To Subtract Cheese");
-                GUILayout.Label("Press O To Add Fruit");
-                GUILayout.Label("Press P To Subtract Fruit");
-                GUILayout.Label("Press Z To Store Position");
-                GUILayout.Label("Press X To Restore Position");
-                GUILayout.Label("Press L To Lock The Scene");
-                GUILayout.Label("Scene locked: " + locked);
+                sceneSelectorShowGUI = !sceneSelectorShowGUI;
             }
+            GUILayout.Label("Press U To Add Cheese");
+            GUILayout.Label("Press I To Subtract Cheese");
+            GUILayout.Label("Press O To Add Fruit");
+            GUILayout.Label("Press P To Subtract Fruit");
+            GUILayout.Label("Press Z To Store Position");
+            GUILayout.Label("Press X To Restore Position");
+            GUILayout.Label("Press L To Lock The Scene");
+            GUILayout.Label("Scene locked: " + locked);
             
 
             /*
