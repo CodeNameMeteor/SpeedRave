@@ -12,8 +12,6 @@
   * Remove Music (Disabled By Default)
   * Modified Seed Generation Allowing For Set Seed Runs (Thanks To <a href="https://github.com/Som1Lse">Som1Lse</a>)
     
- # To Be Added
-  * Save Position
 
 # Installation
 * Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
