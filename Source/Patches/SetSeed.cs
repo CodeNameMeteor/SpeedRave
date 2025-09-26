@@ -102,7 +102,8 @@ namespace SpeedRave.Patches
                 SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
                 seedSTM.text = "Seed: " + Seed;
                 seedSTM.transform.localPosition = new Vector3(
-                seedSTM.transform.localPosition.x - 850f,
+                //seedSTM.transform.localPosition.x - 850f,
+                (seedSTM.transform.localPosition.x - Screen.width/2) + 100, 
                 seedSTM.transform.localPosition.y - seedSTM.transform.localPosition.y - Screen.height/2,
                 seedSTM.transform.localPosition.z
                 );
