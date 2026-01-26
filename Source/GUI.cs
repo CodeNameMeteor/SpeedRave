@@ -92,13 +92,11 @@ namespace SpeedRave
         public static bool showGUI = false;
         public static bool sceneSelectorShowGUI = false;
 
-        private bool trainerToggle = false;
 
         //private string DesiredScene = "";
 
         private Scene currentScene;
 
-        private int sceneIndex = 1;
 
         private const int MAIN_WINDOW_ID = 0;
         private const int SCENE_WINDOW_ID = 1;
@@ -122,6 +120,7 @@ namespace SpeedRave
         public static string lockBind = "l";
         public static string storePositionBind = "z";
         public static string restorePositionBind = "x";
+        public static string openTrainerBind = "insert";
 
 
         private Autosplitter autosplitter;
@@ -143,7 +142,7 @@ namespace SpeedRave
             if (Use)
             {
 
-                if (Input.GetKeyDown(KeyCode.Insert))
+                if (Input.GetKeyDown(openTrainerBind.ToLower()))
                 {
                     showGUI = !showGUI;   
                     if(sceneSelectorShowGUI)

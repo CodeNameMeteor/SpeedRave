@@ -37,6 +37,7 @@ namespace SpeedRave
             GUIComponent.lockBind = Config.Bind("Binds", "Scene Lock Bind", "L").Value;
             GUIComponent.storePositionBind = Config.Bind("Binds", "Store Position Bind", "Z").Value;
             GUIComponent.restorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X").Value;
+            GUIComponent.openTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT").Value;
 
             SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
 
@@ -52,6 +53,7 @@ namespace SpeedRave
             _mod = new GameObject("SpeedRaveGUI");
             _mod.AddComponent<GUIComponent>();
             _mod.AddComponent<Autosplitter>();
+            _mod.AddComponent<ClearInventory>();
             GameObject.DontDestroyOnLoad(_mod);
             if (Instance == null)
             {
