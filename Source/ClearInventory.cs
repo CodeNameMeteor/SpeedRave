@@ -3,32 +3,36 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Reflection;
 using System;
+using System.IO; 
 
 namespace SpeedRave
 {
     public class ClearInventory : MonoBehaviour
     {
-        // --- SETTINGS ---
-        public bool showInventory = true;
-        public bool useIcons = true; // Toggle for Cheese/Fruit logos
+        // Settings
+        public static bool showInventory;
+        public static bool useIcons;
+        public static bool verticalIcons;
 
-        private float iconSize = 50f;
-        private float padding = 10f;
-        private float textHeight = 45f;
-        private float rowHeight = 55f;
+        public static float iconSize;
+        public static float padding;
+        public static float textHeight;
+        public static float rowHeight = 55;
 
-        // Internal Logic Flags
+        // Flags
         private bool fontFound = false;
         private bool texturesResolved = false;
-        private float scanTimer = 0f;
 
-        // References
+        // References to objects I should figure out a cleaner way to do this
         private GameObject inventoryGO;
         private FoodControl foodControl;
 
         // Textures
-        private Texture cheeseTexture;
-        private Texture fruitTexture;
+        private Texture2D cheeseTexture; 
+        private Texture2D fruitTexture;
+
+        // Path to textures
+        private string texturePath;
 
         // Data Structures
         private class ItemDef
@@ -37,14 +41,13 @@ namespace SpeedRave
             public string objectFieldName;
 
             public Texture texture;
-            public Rect uvRect; // Defines which part of the texture to draw (0-1)
+            public Rect uvRect;
 
             public bool isCollected;
         }
 
         private List<ItemDef> allItems = new List<ItemDef>();
         private List<Texture> displayList = new List<Texture>();
-        // Helper list to store UVs for the display list items
         private List<Rect> displayUVs = new List<Rect>();
 
         // Styles
@@ -55,13 +58,18 @@ namespace SpeedRave
         {
             textStyle = new GUIStyle();
             textStyle.normal.textColor = Color.white;
-            textStyle.fontSize = 30;
+            textStyle.fontSize = (int)textHeight;
             textStyle.alignment = TextAnchor.MiddleLeft;
             textStyle.richText = true;
+
+
+            // Texture path: Sewer Rave/BepInEx/CustomTextures
+            texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "CustomTextures");
         }
 
         private void Start()
         {
+
             allItems.Add(new ItemDef { boolFieldName = "haveKey", objectFieldName = "key" });
             allItems.Add(new ItemDef { boolFieldName = "hasDuck", objectFieldName = "ducky" });
             allItems.Add(new ItemDef { boolFieldName = "hasPizza", objectFieldName = "pizza" });
@@ -72,30 +80,31 @@ namespace SpeedRave
 
         private void Update()
         {
-            if (!fontFound) AttemptFindFont();
+            //if (!fontFound) AttemptFindFont();
 
+            // Try to initialize references
             if (!initialized || inventoryGO == null)
             {
                 AttemptInit();
             }
-            // Lazy Scanner: Only run if we WANT icons but don't have them yet
-            else if (useIcons && !texturesResolved)
+
+            // Retry loading local textures if they failed initially (optional fallback)
+            /*
+            if (useIcons && !texturesResolved)
             {
-                scanTimer += Time.deltaTime;
-                if (scanTimer > 3.0f)
-                {
-                    AttemptReFindTextures();
-                    scanTimer = 0f;
-                }
+                LoadLocalTextures();
             }
+            */
 
             if (initialized) CheckInventoryState();
+
+            if (initialized && !fontFound) AttemptFindFont();
         }
 
-        private void AttemptReFindTextures()
+        private void LoadLocalTextures()
         {
-            if (cheeseTexture == null) cheeseTexture = FindTextureExact("cheese");
-            if (fruitTexture == null) fruitTexture = FindTextureExact("fruit");
+            if (cheeseTexture == null) cheeseTexture = LoadTextureFromFile("cheese.png");
+            if (fruitTexture == null) fruitTexture = LoadTextureFromFile("fruit.png");
 
             if (cheeseTexture != null && fruitTexture != null)
             {
@@ -103,14 +112,39 @@ namespace SpeedRave
             }
         }
 
+        private Texture2D LoadTextureFromFile(string filename)
+        {
+            string fullPath = Path.Combine(texturePath, filename);
+
+            if (File.Exists(fullPath))
+            {
+                try
+                {
+                    byte[] fileData = File.ReadAllBytes(fullPath);
+                    Texture2D tex = new Texture2D(2, 2); // Size doesn't matter, LoadImage replaces it
+                    if (tex.LoadImage(fileData))
+                    {
+                        tex.name = filename;
+                        tex.filterMode = FilterMode.Bilinear; // Makes scaling smoother
+                        return tex;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[SpeedRave] Failed to load texture {filename}: {e.Message}");
+                }
+            }
+            return null;
+        }
+
         private void AttemptFindFont()
         {
             Font[] allFonts = Resources.FindObjectsOfTypeAll<Font>();
+
             foreach (Font font in allFonts)
             {
                 if (font == null) continue;
                 string fName = font.name.ToLower();
-
                 if (fName.Contains("autumn") || fName.Contains("larua"))
                 {
                     textStyle.font = font;
@@ -118,6 +152,7 @@ namespace SpeedRave
                     break;
                 }
             }
+            
         }
 
         private void AttemptInit()
@@ -128,10 +163,10 @@ namespace SpeedRave
             {
                 foodControl = inventoryGO.GetComponent<FoodControl>();
 
-                // Attempt to find textures immediately
-                AttemptReFindTextures();
+                // Attempt to load local textures immediately
+                LoadLocalTextures();
 
-                // Find Item Textures
+                // Find Item Textures (Keep existing logic for game items)
                 foreach (var item in allItems)
                 {
                     if (item.texture != null) continue;
@@ -150,23 +185,19 @@ namespace SpeedRave
             }
         }
 
-        // Updated extractor: Gets Texture AND UV Rect (for spritesheets)
         private void ExtractTextureInfo(GameObject go, ItemDef item)
         {
             Sprite sprite = null;
 
-            // Check UI Image
             var img = go.GetComponent<Image>();
             if (img != null) sprite = img.sprite;
 
-            // Check SpriteRenderer
             if (sprite == null)
             {
                 var sr = go.GetComponent<SpriteRenderer>();
                 if (sr != null) sprite = sr.sprite;
             }
 
-            // Check Children
             if (sprite == null)
             {
                 var childImg = go.GetComponentInChildren<Image>();
@@ -176,32 +207,15 @@ namespace SpeedRave
             if (sprite != null)
             {
                 item.texture = sprite.texture;
-
-                // --- ATLAS CALCULATION ---
-                // Calculate normalized UV coordinates based on where the sprite is in the texture
                 Rect r = sprite.textureRect;
                 float w = sprite.texture.width;
                 float h = sprite.texture.height;
-
-                // Create UV rect (x, y, width, height) in 0-1 range
                 item.uvRect = new Rect(r.x / w, r.y / h, r.width / w, r.height / h);
             }
             else
             {
-                // Fallback (full texture)
                 item.uvRect = new Rect(0, 0, 1, 1);
             }
-        }
-
-        private Texture FindTextureExact(string exactName)
-        {
-            Texture[] allTex = Resources.FindObjectsOfTypeAll<Texture>();
-            foreach (Texture t in allTex)
-            {
-                if (t.name.Equals(exactName, StringComparison.OrdinalIgnoreCase))
-                    return t;
-            }
-            return null;
         }
 
         private void CheckInventoryState()
@@ -245,17 +259,14 @@ namespace SpeedRave
         {
             if (!showInventory || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
-            float startX = 20f;
-            float bottomY = Screen.height - 50f;
+            float startX = 0f;
+            float bottomY = Screen.height - 50f - (textHeight - 45);
 
-            // --- 1. DRAW CHEESE / FRUIT ---
-
-            // Logic: Do we have textures AND is Logo Mode on?
+            // Draw Cheese and Fruit
             bool canShowLogos = useIcons && cheeseTexture != null && fruitTexture != null;
 
             if (canShowLogos)
             {
-                // LOGO MODE
                 float fruitY = bottomY;
                 DrawRow(startX, fruitY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
 
@@ -264,11 +275,8 @@ namespace SpeedRave
             }
             else
             {
-                // TEXT MODE (Fallback)
-                // We draw the text string at the bottom
-                string txt = $"Cheese: {foodControl.cheese}   Fruit: {foodControl.fruit}";
+                string txt = $"Cheese: {foodControl.cheese}    Fruit: {foodControl.fruit}";
 
-                // Shadow
                 GUIStyle shadow = new GUIStyle(textStyle);
                 shadow.normal.textColor = Color.black;
                 shadow.font = textStyle.font;
@@ -277,18 +285,14 @@ namespace SpeedRave
                 GUI.Label(new Rect(startX, bottomY, 400, textHeight), txt, textStyle);
             }
 
-            // --- 2. DRAW ITEMS ---
-
-            // Calculate where items start based on what we drew below
+            // Draw Items
             float itemsStartY = bottomY;
             if (canShowLogos)
             {
-                // Items go above Cheese (which is at bottomY - rowHeight)
                 itemsStartY = (bottomY - rowHeight) - rowHeight;
             }
             else
             {
-                // Items go just above the single text line
                 itemsStartY = bottomY - rowHeight;
             }
 
@@ -301,8 +305,16 @@ namespace SpeedRave
 
                 if (tex != null)
                 {
-                    DrawIconWithShadow(currentX, itemsStartY, iconSize, tex, uv);
-                    currentX += iconSize + padding;
+                    if (verticalIcons)
+                    {
+                        DrawIconWithShadow(currentX, itemsStartY, iconSize, tex, uv);
+                        itemsStartY -= iconSize + padding;
+                    }
+                    else
+                    {
+                        DrawIconWithShadow(currentX, itemsStartY, iconSize, tex, uv);
+                        currentX += iconSize + padding;
+                    }
                 }
             }
         }
@@ -319,15 +331,12 @@ namespace SpeedRave
 
         private void DrawIconWithShadow(float x, float y, float size, Texture tex, Rect uv)
         {
-            // Calculate screen rects
             Rect shadowRect = new Rect(x + 2, y + 2, size, size);
             Rect mainRect = new Rect(x, y, size, size);
 
-            // Shadow
             GUI.color = new Color(0, 0, 0, 0.5f);
             GUI.DrawTextureWithTexCoords(shadowRect, tex, uv);
 
-            // Main
             GUI.color = Color.white;
             GUI.DrawTextureWithTexCoords(mainRect, tex, uv);
         }

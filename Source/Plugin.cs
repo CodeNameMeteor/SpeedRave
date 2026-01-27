@@ -46,6 +46,13 @@ namespace SpeedRave
             Autosplitter.twentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false).Value;
             Autosplitter.keySplit = Config.Bind("AutoSplitter", "Key Split", false).Value;
             Autosplitter.itemSplit = Config.Bind("AutoSplitter", "Item Split", false).Value;
+
+            ClearInventory.showInventory = Config.Bind("Clear Inventory", "Enable Clear Inventory", false).Value;
+            ClearInventory.useIcons = Config.Bind("Clear Inventory", "Use Icons", true).Value;
+            ClearInventory.verticalIcons = Config.Bind("Clear Inventory", "Vertical Icons", true).Value;
+            ClearInventory.textHeight = Config.Bind("Clear Inventory", "Text Height", 45f).Value;
+            ClearInventory.iconSize = Config.Bind("Clear Inventory", "Icon Size", 50f).Value;
+            ClearInventory.padding = Config.Bind("Clear Inventory", "Icon Padding", 10f).Value;
         }
 
          void Awake()
