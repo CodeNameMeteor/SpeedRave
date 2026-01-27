@@ -89,7 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoSplitter.cs" />
-    <Compile Include="ClearInventory.cs" />
+    <Compile Include="InventoryOverlay.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="Patches\AutoSplitter.cs" />
     <Compile Include="Patches\CursorLockFix.cs" />

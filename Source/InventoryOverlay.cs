@@ -7,7 +7,7 @@ using System.IO;
 
 namespace SpeedRave
 {
-    public class ClearInventory : MonoBehaviour
+    public class InventoryOverlay : MonoBehaviour
     {
         // Settings
         public static bool showInventory;

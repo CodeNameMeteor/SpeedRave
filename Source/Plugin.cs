@@ -47,12 +47,12 @@ namespace SpeedRave
             Autosplitter.keySplit = Config.Bind("AutoSplitter", "Key Split", false).Value;
             Autosplitter.itemSplit = Config.Bind("AutoSplitter", "Item Split", false).Value;
 
-            ClearInventory.showInventory = Config.Bind("Clear Inventory", "Enable Clear Inventory", false).Value;
-            ClearInventory.useIcons = Config.Bind("Clear Inventory", "Use Icons", true).Value;
-            ClearInventory.verticalIcons = Config.Bind("Clear Inventory", "Vertical Icons", true).Value;
-            ClearInventory.textHeight = Config.Bind("Clear Inventory", "Text Height", 45f).Value;
-            ClearInventory.iconSize = Config.Bind("Clear Inventory", "Icon Size", 50f).Value;
-            ClearInventory.padding = Config.Bind("Clear Inventory", "Icon Padding", 10f).Value;
+            InventoryOverlay.showInventory = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false).Value;
+            InventoryOverlay.useIcons = Config.Bind("Inventory Overlay", "Use Icons", true).Value;
+            InventoryOverlay.verticalIcons = Config.Bind("Inventory Overlay", "Vertical Icons", true).Value;
+            InventoryOverlay.textHeight = Config.Bind("Inventory Overlay", "Text Height", 45f).Value;
+            InventoryOverlay.iconSize = Config.Bind("Inventory Overlay", "Icon Size", 50f).Value;
+            InventoryOverlay.padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f).Value;
         }
 
          void Awake()
@@ -60,7 +60,7 @@ namespace SpeedRave
             _mod = new GameObject("SpeedRaveGUI");
             _mod.AddComponent<GUIComponent>();
             _mod.AddComponent<Autosplitter>();
-            _mod.AddComponent<ClearInventory>();
+            _mod.AddComponent<InventoryOverlay>();
             GameObject.DontDestroyOnLoad(_mod);
             if (Instance == null)
             {
