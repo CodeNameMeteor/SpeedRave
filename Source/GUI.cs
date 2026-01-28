@@ -133,8 +133,8 @@ namespace SpeedRave
         private FieldInfo characterTargetRotField;
         private FieldInfo cameraTargetRotField;
 
-        private string seedInput = "";         
-        private int parsedSeed = 0;           
+        private string seedInput = "";
+        private int parsedSeed = 0;
 
 
         private void Update()
@@ -150,46 +150,14 @@ namespace SpeedRave
                     }
                 }
 
-                if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
+                if (Input.GetKeyDown(storePositionBind.ToLower()))
                 {
-                    if (Input.GetKeyDown(storePositionBind.ToLower()))
-                    {
-                        storedPosition = ReferenceManager.PlayerController.transform.position;
+                    StorePlayerPosition();
+                }
 
-                        object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
-
-                        if (mouseLookObj != null)
-                        {
-                            object charRotObj = ReferenceManager.CharacterTargetRotField.GetValue(mouseLookObj);
-                            object camRotObj = ReferenceManager.CameraTargetRotField.GetValue(mouseLookObj);
-
-                            if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
-                            {
-                                storedCharacterRot = charRot;
-                                storedCameraRot = camRot;
-                            }
-                        }
-                    }
-
-                    if (Input.GetKeyDown(restorePositionBind.ToLower()))
-                    {
-                        ReferenceManager.PlayerController.transform.position = storedPosition;
-
-                        object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
-
-                        if (mouseLookObj != null)
-                        {
-                            ReferenceManager.CharacterTargetRotField.SetValue(mouseLookObj, storedCharacterRot);
-                            ReferenceManager.CameraTargetRotField.SetValue(mouseLookObj, storedCameraRot);
-
-                            var camera = ReferenceManager.MainCamera;
-                            if (camera != null)
-                            {
-                                ReferenceManager.Player.transform.localRotation = storedCharacterRot;
-                                camera.transform.localRotation = storedCameraRot;
-                            }
-                        }
-                    }
+                if (Input.GetKeyDown(restorePositionBind.ToLower()))
+                {
+                    RestorePlayerPosition();
                 }
 
 
@@ -197,33 +165,25 @@ namespace SpeedRave
                 {
                     if (Input.GetKeyDown(addCheeseBind.ToLower()))
                     {
-                        ReferenceManager.ActiveFoodControl.cheese++;
+                        ModifyCheese(1);
                     }
                     if (Input.GetKeyDown(removeCheeseBind.ToLower()))
                     {
-                        ReferenceManager.ActiveFoodControl.cheese--;
+                        ModifyCheese(-1);
                     }
                     if (Input.GetKeyDown(addFruitBind.ToLower()))
                     {
-                        ReferenceManager.ActiveFoodControl.fruit++;
+                        ModifyFruit(1);
                     }
                     if (Input.GetKeyDown(removeFruitBind.ToLower()))
                     {
-                        ReferenceManager.ActiveFoodControl.fruit--;
+                        ModifyFruit(-1);
                     }
                 }
 
                 if (Input.GetKeyDown(lockBind.ToLower()))
                 {
-                    if (!locked)
-                    {
-                        Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
-                        locked = true;
-                    }
-                    else
-                    {
-                        locked = false;
-                    }
+                    ToggleSceneLock();
                 }
             }
         }
@@ -245,9 +205,9 @@ namespace SpeedRave
             {
                 winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
             }
-            if(sceneSelectorShowGUI)
+            if (sceneSelectorShowGUI)
             {
-                sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc,"Scene" );
+                sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
             }
         }
 
@@ -267,15 +227,23 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
-            currentScene = SceneManager.GetActiveScene();
-            GUILayout.Label("Connected To LiveSplit:" + Autosplitter.Instance.IsConnectedToLivesplit);
-            if (GUILayout.Button("Connect") && !Autosplitter.Instance.IsConnectedToLivesplit)
+            // Autosplitter 
+            GUILayout.Label("<b>Autosplitter</b>");
+            GUILayout.Label($"Connected: {Autosplitter.Instance.IsConnectedToLivesplit}");
+            if (!Autosplitter.Instance.IsConnectedToLivesplit)
             {
-                Autosplitter.Instance.ConnectToLiveSplit();
+                if (GUILayout.Button("Connect to LiveSplit"))
+                    Autosplitter.Instance.ConnectToLiveSplit();
             }
-            GUILayout.Label("Seed:" + Patches.SetSeedPatchs.Seed);
-            GUILayout.Label("Enter Seed:");
+
+            GUILayout.Space(5);
+
+            // Seed Control
+            GUILayout.Label("<b>Seed Control</b>");
+            GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
             seedInput = GUILayout.TextField(seedInput, 11);
+
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Set Seed"))
             {
                 if (int.TryParse(seedInput, out parsedSeed))
@@ -283,47 +251,128 @@ namespace SpeedRave
                     Patches.SetSeedPatchs.Seed = parsedSeed;
                     UnityEngine.Random.InitState(parsedSeed);
                     Patches.SetSeedPatchs.randomSeed = false;
-                    Debug.Log($"[SpeedRave] Seed set to {parsedSeed}");
-                }
-                else
-                {
-                    Debug.LogWarning("[SpeedRave] Invalid seed input!");
                 }
             }
-            if (GUILayout.Button("Set Last Random Seed") && Patches.SetSeedPatchs.lastRandomSeed != 0)
+            if (GUILayout.Button("Last Random"))
             {
-                Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
-                Patches.SetSeedPatchs.randomSeed = false;
+                if (Patches.SetSeedPatchs.lastRandomSeed != 0)
+                {
+                    Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
+                    Patches.SetSeedPatchs.randomSeed = false;
+                }
             }
-            Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, "Use Random Seed");
-            if (GUILayout.Button("Open Scene Selector"))
+            GUILayout.EndHorizontal();
+            Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
+
+            // Room Selector
+            GUILayout.Label("<b>Scene Selector</b>");
+            GUILayout.Label($"Current Room: {SceneManager.GetActiveScene().name}");
+            if (GUILayout.Button(sceneSelectorShowGUI ? "Close Selector" : "Open Room Selector"))
             {
                 sceneSelectorShowGUI = !sceneSelectorShowGUI;
             }
-            GUILayout.Label("Press U To Add Cheese");
-            GUILayout.Label("Press I To Subtract Cheese");
-            GUILayout.Label("Press O To Add Fruit");
-            GUILayout.Label("Press P To Subtract Fruit");
-            GUILayout.Label("Press Z To Store Position");
-            GUILayout.Label("Press X To Restore Position");
-            GUILayout.Label("Press L To Lock The Scene");
-            GUILayout.Label("Scene locked: " + locked);
-            
 
-            /*
-            DesiredScene = GUILayout.TextField("EnterScene", 100);
-            if (GUILayout.Button("Enter"))
+            GUILayout.Space(5);
+
+            // Room Locking
+            GUILayout.Label("<b>Room Lock</b>");
+            string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
+            GUILayout.Label($"Status: {lockStatus}");
+            if (GUILayout.Button(locked ? "Unlock (L)" : "Lock (L)"))
             {
-                SceneManager.LoadScene(DesiredScene);
+                locked = !locked;
+                if (locked) Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
             }
-            
-            if (GUILayout.Button("Test") )
-            {
-                SceneManager.LoadScene(sceneIndex);
-                sceneIndex++;
-            }
-            */
+
+            // Trainer
+            GUILayout.Label("<b>Trainer </b>");
+
+            // Cheese Row
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Add Cheese ({addCheeseBind.ToUpper()})")) ModifyCheese(1);
+            if (GUILayout.Button($"Sub Cheese ({removeCheeseBind.ToUpper()})")) ModifyCheese(-1);
+            GUILayout.EndHorizontal();
+
+            // Fruit Row
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Add Fruit ({addFruitBind.ToUpper()})")) ModifyFruit(1);
+            if (GUILayout.Button($"Sub Fruit ({removeFruitBind.ToUpper()})")) ModifyFruit(-1);
+            GUILayout.EndHorizontal();
+
+            // Position Row
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Store Pos ({storePositionBind.ToUpper()})")) StorePlayerPosition();
+            if (GUILayout.Button($"Restore Pos ({restorePositionBind.ToUpper()})")) RestorePlayerPosition();
+            GUILayout.EndHorizontal();
+
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        }
+
+        private void ToggleSceneLock()
+        {
+            if (!locked)
+            {
+                Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                locked = true;
+            }
+            else
+            {
+                locked = false;
+            }
+        }
+        private void ModifyFruit(int amount)
+        {
+            if (ReferenceManager.ActiveFoodControl != null)
+            {
+                ReferenceManager.ActiveFoodControl.fruit += amount;
+            }
+        }
+        private void ModifyCheese(int amount)
+        {
+            if (ReferenceManager.ActiveFoodControl != null)
+            {
+                ReferenceManager.ActiveFoodControl.cheese += amount;
+            }
+        }
+        private void StorePlayerPosition()
+        {
+            if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
+            {
+                storedPosition = ReferenceManager.PlayerController.transform.position;
+
+                object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
+
+                if (mouseLookObj != null)
+                {
+                    object charRotObj = ReferenceManager.CharacterTargetRotField.GetValue(mouseLookObj);
+                    object camRotObj = ReferenceManager.CameraTargetRotField.GetValue(mouseLookObj);
+
+                    if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
+                    {
+                        storedCharacterRot = charRot;
+                        storedCameraRot = camRot;
+                    }
+                }
+            }
+        }
+        private void RestorePlayerPosition()
+        {
+            if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
+            {
+                ReferenceManager.PlayerController.transform.position = storedPosition;
+                object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
+                if (mouseLookObj != null)
+                {
+                    ReferenceManager.CharacterTargetRotField.SetValue(mouseLookObj, storedCharacterRot);
+                    ReferenceManager.CameraTargetRotField.SetValue(mouseLookObj, storedCameraRot);
+                    var camera = ReferenceManager.MainCamera;
+                    if (camera != null)
+                    {
+                        ReferenceManager.Player.transform.localRotation = storedCharacterRot;
+                        camera.transform.localRotation = storedCameraRot;
+                    }
+                }
+            }
         }
     }
 }
