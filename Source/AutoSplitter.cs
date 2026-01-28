@@ -30,11 +30,10 @@ namespace SpeedRave
         public static bool twentyFruitSplit;
         public static bool itemSplit;
 
-        public FoodControl[] FoodControlArray;
 
-        // Networking
+        // Networking stuff
         public bool IsConnectedToLivesplit { get; private set; } = false;
-        private string IpAddress = "127.0.0.1"; // Use IP instead of "localhost" to avoid DNS lookup lag
+        private string IpAddress = "127.0.0.1"; 
         private int Port = 16834;
         private TcpClient Client = null;
         private NetworkStream Stream = null;
@@ -42,6 +41,13 @@ namespace SpeedRave
 
         private bool timerPaused = false;
 
+        // Singleton Instance
+        public static Autosplitter Instance { get; private set; }
+
+        public void Awake()
+        {
+            Instance = this;
+        }
         public void Start()
         {
             // Try to connect on startup, but do it silently in the background
@@ -51,7 +57,6 @@ namespace SpeedRave
             }
         }
 
-        // FIX 1: Async Connection to prevent startup lag
         public async void ConnectToLiveSplit()
         {
             if (_isConnecting || IsConnectedToLivesplit) return;
@@ -67,8 +72,6 @@ namespace SpeedRave
                 {
                     Stream = Client.GetStream();
 
-                    // Optional: Handshake logic (simplified for stability)
-                    // Sending initialization command safely
                     SendMessageSafe("getcurrenttimerphase");
                     SendMessageSafe("initgametime");
 
@@ -79,7 +82,7 @@ namespace SpeedRave
             catch (Exception ex)
             {
                 Debug.LogWarning($"SpeedRave: Could not connect to LiveSplit. {ex.Message}");
-                Disconnect(); // Ensure cleanup on failure
+                Disconnect(); 
             }
             finally
             {
@@ -87,7 +90,6 @@ namespace SpeedRave
             }
         }
 
-        // FIX 2: Proper Disconnection to prevent socket leaks
         private void Disconnect()
         {
             IsConnectedToLivesplit = false;
@@ -110,7 +112,6 @@ namespace SpeedRave
             Client = null;
         }
 
-        // FIX 3: Safe Message Sending
         public void AttemptSendCommand(string command)
         {
             if (!IsConnectedToLivesplit) return;
@@ -132,14 +133,12 @@ namespace SpeedRave
             }
             catch (Exception)
             {
-                // If writing fails, assume connection is dead and clean up
                 Disconnect();
             }
         }
 
         public void Update()
         {
-            // Only run logic if connected or debugging
             if (IsConnectedToLivesplit || debug)
             {
                 UpdateAutosplitter();
@@ -165,17 +164,15 @@ namespace SpeedRave
                 AttemptSendCommand("reset");
                 AttemptSendCommand("starttimer");
 
-                // Cache this array once per run, not every frame
-                FoodControlArray = FindObjectsOfType<FoodControl>();
 
-                ResetRunFlags(); // Extracted helper method
+                ResetRunFlags();
                 gameStarted = true;
             }
 
             // Split Logic
-            if (gameStarted && FoodControlArray != null && FoodControlArray.Length > 0)
+            if (gameStarted && ReferenceManager.ActiveFoodControl != null)
             {
-                var playerFood = FoodControlArray[0];
+                var playerFood = ReferenceManager.ActiveFoodControl;
 
                 if (twentyResourceSplit && !gotResources && (playerFood.cheese + playerFood.fruit >= 20))
                 {
@@ -238,7 +235,6 @@ namespace SpeedRave
         {
             if (IsConnectedToLivesplit)
             {
-                // Try to pause, then kill connection
                 SendMessageSafe("pausegametime");
                 Disconnect();
             }

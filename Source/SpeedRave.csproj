@@ -91,6 +91,7 @@
     <Compile Include="AutoSplitter.cs" />
     <Compile Include="InventoryOverlay.cs" />
     <Compile Include="GUI.cs" />
+    <Compile Include="ReferenceManager.cs" />
     <Compile Include="Patches\AutoSplitter.cs" />
     <Compile Include="Patches\CursorLockFix.cs" />
     <Compile Include="Patches\QuickStart.cs" />

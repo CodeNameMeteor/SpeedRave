@@ -123,7 +123,7 @@ namespace SpeedRave
         public static string openTrainerBind = "insert";
 
 
-        private Autosplitter autosplitter;
+        //private Autosplitter autosplitter;
 
         private Vector3 storedPosition;
         private Quaternion storedCharacterRot;
@@ -133,107 +133,106 @@ namespace SpeedRave
         private FieldInfo characterTargetRotField;
         private FieldInfo cameraTargetRotField;
 
-        private string seedInput = "";         // the string typed by user
-        private int parsedSeed = 0;            // the parsed seed (optional)
+        private string seedInput = "";         
+        private int parsedSeed = 0;           
 
 
         private void Update()
         {
             if (Use)
             {
-
                 if (Input.GetKeyDown(openTrainerBind.ToLower()))
                 {
-                    showGUI = !showGUI;   
-                    if(sceneSelectorShowGUI)
+                    showGUI = !showGUI;
+                    if (sceneSelectorShowGUI)
                     {
                         sceneSelectorShowGUI = false;
                     }
                 }
-                var FoodControlArray = FindObjectsOfType<FoodControl>();
-                if (FoodControlArray.Length > 1)
-                {
-                    for (int i = FoodControlArray.Length - 1; i > 0; i--)
-                        {
-                            Destroy(FoodControlArray[i]);
-                        }
-                }
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (Input.GetKeyDown(storePositionBind.ToLower()) && player != null)
-                {
-                    var playerControls = player.GetComponent<FirstPersonController>();
-                    storedPosition = player.transform.position;
 
-                    var mouseLook = mouseLookField.GetValue(playerControls);
-                    if (mouseLook != null)
+                if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
+                {
+                    if (Input.GetKeyDown(storePositionBind.ToLower()))
                     {
-                        object charRotObj = characterTargetRotField.GetValue(mouseLook);
-                        object camRotObj = cameraTargetRotField.GetValue(mouseLook);
+                        storedPosition = ReferenceManager.PlayerController.transform.position;
 
-                        if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
+                        object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
+
+                        if (mouseLookObj != null)
                         {
-                            storedCharacterRot = charRot;
-                            storedCameraRot = camRot;
+                            object charRotObj = ReferenceManager.CharacterTargetRotField.GetValue(mouseLookObj);
+                            object camRotObj = ReferenceManager.CameraTargetRotField.GetValue(mouseLookObj);
+
+                            if (charRotObj is Quaternion charRot && camRotObj is Quaternion camRot)
+                            {
+                                storedCharacterRot = charRot;
+                                storedCameraRot = camRot;
+                            }
+                        }
+                    }
+
+                    if (Input.GetKeyDown(restorePositionBind.ToLower()))
+                    {
+                        ReferenceManager.PlayerController.transform.position = storedPosition;
+
+                        object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
+
+                        if (mouseLookObj != null)
+                        {
+                            ReferenceManager.CharacterTargetRotField.SetValue(mouseLookObj, storedCharacterRot);
+                            ReferenceManager.CameraTargetRotField.SetValue(mouseLookObj, storedCameraRot);
+
+                            var camera = ReferenceManager.MainCamera;
+                            if (camera != null)
+                            {
+                                ReferenceManager.Player.transform.localRotation = storedCharacterRot;
+                                camera.transform.localRotation = storedCameraRot;
+                            }
                         }
                     }
                 }
-                if (Input.GetKeyDown(restorePositionBind.ToLower()) && player != null)
+
+
+                if (ReferenceManager.ActiveFoodControl != null)
                 {
-                    var playerControls = player.GetComponent<FirstPersonController>();
-                    player.transform.position = storedPosition;
-                    var mouseLook = mouseLookField.GetValue(playerControls);
-                    if (mouseLook != null)
+                    if (Input.GetKeyDown(addCheeseBind.ToLower()))
                     {
-                        characterTargetRotField.SetValue(mouseLook, storedCharacterRot);
-                        cameraTargetRotField.SetValue(mouseLook, storedCameraRot);
-                        // Also set actual transforms to match the target rots
-                        var camera = (Camera)cameraField.GetValue(playerControls);
-                        if (camera != null)
-                        {
-                            player.transform.localRotation = storedCharacterRot;
-                            camera.transform.localRotation = storedCameraRot;
-                        }
+                        ReferenceManager.ActiveFoodControl.cheese++;
+                    }
+                    if (Input.GetKeyDown(removeCheeseBind.ToLower()))
+                    {
+                        ReferenceManager.ActiveFoodControl.cheese--;
+                    }
+                    if (Input.GetKeyDown(addFruitBind.ToLower()))
+                    {
+                        ReferenceManager.ActiveFoodControl.fruit++;
+                    }
+                    if (Input.GetKeyDown(removeFruitBind.ToLower()))
+                    {
+                        ReferenceManager.ActiveFoodControl.fruit--;
                     }
                 }
-                    
-                if (Input.GetKeyDown(addCheeseBind.ToLower()))
+
+                if (Input.GetKeyDown(lockBind.ToLower()))
                 {
-                    FoodControlArray[0].cheese++;
-                }
-                if (Input.GetKeyDown(removeCheeseBind.ToLower()))
-                {
-                    FoodControlArray[0].cheese--;
-                }
-                if (Input.GetKeyDown(addFruitBind.ToLower()))
-                {
-                    FoodControlArray[0].fruit++;
-                }
-                if (Input.GetKeyDown(removeFruitBind.ToLower()))
-                {
-                    FoodControlArray[0].fruit--;
-                }
-                if (Input.GetKeyDown(lockBind.ToLower()) && !locked)
-                {
-                    Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
-                    locked = true;
-                }
-                else if (Input.GetKeyDown(lockBind.ToLower()) && locked)
-                {
-                    locked = false;
+                    if (!locked)
+                    {
+                        Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                        locked = true;
+                    }
+                    else
+                    {
+                        locked = false;
+                    }
                 }
             }
         }
 
         private void Start()
         {
-            mouseLookField = AccessTools.Field(typeof(FirstPersonController), "m_MouseLook");
-            characterTargetRotField = AccessTools.Field(typeof(MouseLook), "m_CharacterTargetRot");
-            cameraTargetRotField = AccessTools.Field(typeof(MouseLook), "m_CameraTargetRot");
-            cameraField = AccessTools.Field(typeof(FirstPersonController), "m_Camera");
-            autosplitter = FindObjectOfType<Autosplitter>();
-            if (autosplitter != null)
+            if (Autosplitter.Instance != null)
             {
-                autosplitter.ConnectToLiveSplit();
+                Autosplitter.Instance.ConnectToLiveSplit();
             }
             else
             {
@@ -269,10 +268,10 @@ namespace SpeedRave
         private void WinProc(int id)
         {
             currentScene = SceneManager.GetActiveScene();
-            GUILayout.Label("Connected To LiveSplit:" + autosplitter.IsConnectedToLivesplit);
-            if (GUILayout.Button("Connect") && !autosplitter.IsConnectedToLivesplit)
+            GUILayout.Label("Connected To LiveSplit:" + Autosplitter.Instance.IsConnectedToLivesplit);
+            if (GUILayout.Button("Connect") && !Autosplitter.Instance.IsConnectedToLivesplit)
             {
-                autosplitter.ConnectToLiveSplit();
+                Autosplitter.Instance.ConnectToLiveSplit();
             }
             GUILayout.Label("Seed:" + Patches.SetSeedPatchs.Seed);
             GUILayout.Label("Enter Seed:");

@@ -62,6 +62,7 @@ namespace SpeedRave
             _mod.AddComponent<Autosplitter>();
             _mod.AddComponent<InventoryOverlay>();
             GameObject.DontDestroyOnLoad(_mod);
+            ReferenceManager.Initialize();
             if (Instance == null)
             {
                 Instance = this;

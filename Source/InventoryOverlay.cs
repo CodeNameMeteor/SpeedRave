@@ -157,11 +157,11 @@ namespace SpeedRave
 
         private void AttemptInit()
         {
-            inventoryGO = GameObject.FindGameObjectWithTag("Inventory");
+            inventoryGO = ReferenceManager.ActiveInventory;
 
             if (inventoryGO != null)
             {
-                foodControl = inventoryGO.GetComponent<FoodControl>();
+                foodControl = ReferenceManager.ActiveFoodControl;
 
                 // Attempt to load local textures immediately
                 LoadLocalTextures();
