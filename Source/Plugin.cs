@@ -11,7 +11,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.9.5";
+        public const string modVersion = "0.9.9";
 
         private GameObject _mod;
 
@@ -29,7 +29,10 @@ namespace SpeedRave
 
             QuickStartPatch.Use = Config.Bind("Patches", "QuickStart", true).Value;
 
-            GUIComponent.Use = Config.Bind("Trainer", "Room Picker", true).Value;
+            SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
+
+            GUIComponent.Use = Config.Bind("Trainer", "Enable Trainer", true).Value;
+
             GUIComponent.addCheeseBind = Config.Bind("Binds", "Add Cheese Bind", "U").Value;
             GUIComponent.removeCheeseBind = Config.Bind("Binds", "Remove Cheese Bind", "I").Value;
             GUIComponent.addFruitBind = Config.Bind("Binds", "Add Fruit Bind", "O").Value;
@@ -39,7 +42,6 @@ namespace SpeedRave
             GUIComponent.restorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X").Value;
             GUIComponent.openTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT").Value;
 
-            SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
 
             Autosplitter.Use = Config.Bind("AutoSplitter", "Autosplitter Enabled", true).Value;
             Autosplitter.twentyResourceSplit = Config.Bind("AutoSplitter", "Twenty Resource Split", false).Value;

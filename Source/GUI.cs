@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using SpeedRave.Patches;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -92,6 +93,9 @@ namespace SpeedRave
         public static bool showGUI = false;
         public static bool sceneSelectorShowGUI = false;
 
+        private static bool configShowGUI = false;
+        private Vector2 configScroll = Vector2.zero;
+
 
         //private string DesiredScene = "";
 
@@ -101,6 +105,7 @@ namespace SpeedRave
         private const int MAIN_WINDOW_ID = 0;
         private const int SCENE_WINDOW_ID = 1;
 
+        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 300, 450);
         private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
         private static Rect sceneWinRect = new(
             winRect.x + winRect.width + 10, // 10px padding to the right
@@ -148,6 +153,10 @@ namespace SpeedRave
                     {
                         sceneSelectorShowGUI = false;
                     }
+                    if(configShowGUI)
+                    {
+                        configShowGUI = false;
+                    }
                 }
 
                 if (Input.GetKeyDown(storePositionBind.ToLower()))
@@ -190,7 +199,7 @@ namespace SpeedRave
 
         private void Start()
         {
-            if (Autosplitter.Instance != null)
+            if (Autosplitter.Instance != null && Autosplitter.Use)
             {
                 Autosplitter.Instance.ConnectToLiveSplit();
             }
@@ -209,6 +218,70 @@ namespace SpeedRave
             {
                 sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
             }
+            if(configShowGUI)
+            {
+                configWinRect = GUI.Window(2, configWinRect, ConfigWinProc, "SpeedRave Config");
+            }
+        }
+        private void ConfigWinProc(int id)
+        {
+            configScroll = GUILayout.BeginScrollView(configScroll);
+            GUILayout.Label("<b>Patches</b>");
+            QuickStartPatch.Use = GUILayout.Toggle(QuickStartPatch.Use, " Quick Start");
+            QuitToMenuPatch.Use = GUILayout.Toggle(QuitToMenuPatch.Use, " Quit to Menu");
+            RemoveMusicPatch.Use = GUILayout.Toggle(RemoveMusicPatch.Use, " Remove Music");
+
+
+            GUILayout.Label("<b>Autosplitter</b>");
+
+            Autosplitter.Use = GUILayout.Toggle(Autosplitter.Use, " Enable Autosplitter");
+            Autosplitter.twentyResourceSplit = GUILayout.Toggle(Autosplitter.twentyResourceSplit, " Split on 20 Resources");
+            Autosplitter.keySplit = GUILayout.Toggle(Autosplitter.keySplit, " Split on Key");
+            Autosplitter.twentyFruitSplit = GUILayout.Toggle(Autosplitter.twentyFruitSplit, " Split on 20 Fruit");
+            Autosplitter.itemSplit = GUILayout.Toggle(Autosplitter.itemSplit, " Split on Item Pickup");
+
+            GUILayout.Space(10);
+
+            GUILayout.Label("<b>Seed Control</b>");
+
+            SetSeedPatchs.Use = GUILayout.Toggle(SetSeedPatchs.Use, " Enable Seeds");
+
+            GUILayout.Label("<b>Inventory Overlay</b>");
+
+            // Boolean Toggle
+            InventoryOverlay.showInventory = GUILayout.Toggle(InventoryOverlay.showInventory, " Show Inventory");
+            InventoryOverlay.useIcons = GUILayout.Toggle(InventoryOverlay.useIcons, " Use Icons");
+            InventoryOverlay.verticalIcons = GUILayout.Toggle(InventoryOverlay.verticalIcons, " Vertical Item Icons");
+
+            // Float Slider for Icon Size
+            GUILayout.Label($"Icon Size: {InventoryOverlay.iconSize:F0}");
+            InventoryOverlay.iconSize = GUILayout.HorizontalSlider(InventoryOverlay.iconSize, 20f, 150f);
+
+            // Float Slider for Text Height
+            GUILayout.Label($"Text Size: {InventoryOverlay.textHeight:F0}");
+            InventoryOverlay.textHeight = GUILayout.HorizontalSlider(InventoryOverlay.textHeight, 20f, 150f);
+
+            // Float Slider for Logo Padding
+            GUILayout.Label($"Logo Padding: {InventoryOverlay.padding:F0}");
+            InventoryOverlay.padding = GUILayout.HorizontalSlider(InventoryOverlay.padding, 10f, 150f);
+
+            GUILayout.Space(10);
+            GUILayout.Label("<b>Trainer</b>");
+
+            GUIComponent.Use = GUILayout.Toggle(GUIComponent.Use, " Enable Trainer");
+
+            GUILayout.Label("<b>Binds (Press Enter to apply)</b>");
+            GUIComponent.addCheeseBind = GUILayout.TextField(GUIComponent.addCheeseBind);
+            GUIComponent.removeCheeseBind = GUILayout.TextField(GUIComponent.removeCheeseBind);
+            GUIComponent.addFruitBind = GUILayout.TextField(GUIComponent.addFruitBind);
+            GUIComponent.removeFruitBind = GUILayout.TextField(GUIComponent.removeFruitBind);
+            GUIComponent.lockBind = GUILayout.TextField(GUIComponent.lockBind);
+            GUIComponent.storePositionBind = GUILayout.TextField(GUIComponent.storePositionBind);
+            GUIComponent.restorePositionBind = GUILayout.TextField(GUIComponent.restorePositionBind);
+
+
+            GUILayout.EndScrollView();
+            GUI.DragWindow();
         }
 
         private void SceneWinProc(int id)
@@ -227,82 +300,100 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
-            // Autosplitter 
-            GUILayout.Label("<b>Autosplitter</b>");
-            GUILayout.Label($"Connected: {Autosplitter.Instance.IsConnectedToLivesplit}");
-            if (!Autosplitter.Instance.IsConnectedToLivesplit)
+            if(Autosplitter.Use)
             {
-                if (GUILayout.Button("Connect to LiveSplit"))
-                    Autosplitter.Instance.ConnectToLiveSplit();
-            }
+                // Autosplitter 
+                GUILayout.Label("<b>Autosplitter</b>");
+                GUILayout.Label($"Connected: {Autosplitter.Instance.IsConnectedToLivesplit}");
+                if (!Autosplitter.Instance.IsConnectedToLivesplit)
+                {
+                    if (GUILayout.Button("Connect to LiveSplit"))
+                        Autosplitter.Instance.ConnectToLiveSplit();
+                }
 
-            GUILayout.Space(5);
+                GUILayout.Space(5);
+            }
 
             // Seed Control
-            GUILayout.Label("<b>Seed Control</b>");
-            GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
-            seedInput = GUILayout.TextField(seedInput, 11);
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Set Seed"))
+            if(SetSeedPatchs.Use)
             {
-                if (int.TryParse(seedInput, out parsedSeed))
+                GUILayout.Label("<b>Seed Control</b>");
+                GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
+                seedInput = GUILayout.TextField(seedInput, 11);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Set Seed"))
                 {
-                    Patches.SetSeedPatchs.Seed = parsedSeed;
-                    UnityEngine.Random.InitState(parsedSeed);
-                    Patches.SetSeedPatchs.randomSeed = false;
+                    if (int.TryParse(seedInput, out parsedSeed))
+                    {
+                        Patches.SetSeedPatchs.Seed = parsedSeed;
+                        UnityEngine.Random.InitState(parsedSeed);
+                        Patches.SetSeedPatchs.randomSeed = false;
+                    }
                 }
-            }
-            if (GUILayout.Button("Last Random"))
-            {
-                if (Patches.SetSeedPatchs.lastRandomSeed != 0)
+                if (GUILayout.Button("Last Random"))
                 {
-                    Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
-                    Patches.SetSeedPatchs.randomSeed = false;
+                    if (Patches.SetSeedPatchs.lastRandomSeed != 0)
+                    {
+                        Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
+                        Patches.SetSeedPatchs.randomSeed = false;
+                    }
                 }
+                GUILayout.EndHorizontal();
+                Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
             }
-            GUILayout.EndHorizontal();
-            Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
-
-            // Room Selector
-            GUILayout.Label("<b>Scene Selector</b>");
-            GUILayout.Label($"Current Room: {SceneManager.GetActiveScene().name}");
-            if (GUILayout.Button(sceneSelectorShowGUI ? "Close Selector" : "Open Room Selector"))
+            
+            if(GUIComponent.Use)
             {
-                sceneSelectorShowGUI = !sceneSelectorShowGUI;
+                // Room Selector
+                GUILayout.Label("<b>Scene Selector</b>");
+                GUILayout.Label($"Current Room: {SceneManager.GetActiveScene().name}");
+                if (GUILayout.Button(sceneSelectorShowGUI ? "Close Selector" : "Open Room Selector"))
+                {
+                    sceneSelectorShowGUI = !sceneSelectorShowGUI;
+                }
+
+                GUILayout.Space(5);
+
+                // Room Locking
+                GUILayout.Label("<b>Room Lock</b>");
+                string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
+                GUILayout.Label($"Status: {lockStatus}");
+                if (GUILayout.Button(locked ? "Unlock (L)" : "Lock (L)"))
+                {
+                    locked = !locked;
+                    if (locked) Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                }
+
+                // Trainer
+                GUILayout.Label("<b>Trainer </b>");
+
+                // Cheese Row
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button($"Add Cheese ({addCheeseBind.ToUpper()})")) ModifyCheese(1);
+                if (GUILayout.Button($"Sub Cheese ({removeCheeseBind.ToUpper()})")) ModifyCheese(-1);
+                GUILayout.EndHorizontal();
+
+                // Fruit Row
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button($"Add Fruit ({addFruitBind.ToUpper()})")) ModifyFruit(1);
+                if (GUILayout.Button($"Sub Fruit ({removeFruitBind.ToUpper()})")) ModifyFruit(-1);
+                GUILayout.EndHorizontal();
+
+                // Position Row
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button($"Store Pos ({storePositionBind.ToUpper()})")) StorePlayerPosition();
+                if (GUILayout.Button($"Restore Pos ({restorePositionBind.ToUpper()})")) RestorePlayerPosition();
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(5);
             }
 
-            GUILayout.Space(5);
-
-            // Room Locking
-            GUILayout.Label("<b>Room Lock</b>");
-            string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
-            GUILayout.Label($"Status: {lockStatus}");
-            if (GUILayout.Button(locked ? "Unlock (L)" : "Lock (L)"))
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
             {
-                locked = !locked;
-                if (locked) Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                configShowGUI = !configShowGUI;
             }
-
-            // Trainer
-            GUILayout.Label("<b>Trainer </b>");
-
-            // Cheese Row
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"Add Cheese ({addCheeseBind.ToUpper()})")) ModifyCheese(1);
-            if (GUILayout.Button($"Sub Cheese ({removeCheeseBind.ToUpper()})")) ModifyCheese(-1);
-            GUILayout.EndHorizontal();
-
-            // Fruit Row
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"Add Fruit ({addFruitBind.ToUpper()})")) ModifyFruit(1);
-            if (GUILayout.Button($"Sub Fruit ({removeFruitBind.ToUpper()})")) ModifyFruit(-1);
-            GUILayout.EndHorizontal();
-
-            // Position Row
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"Store Pos ({storePositionBind.ToUpper()})")) StorePlayerPosition();
-            if (GUILayout.Button($"Restore Pos ({restorePositionBind.ToUpper()})")) RestorePlayerPosition();
             GUILayout.EndHorizontal();
 
             GUI.DragWindow(new Rect(0, 0, 10000, 20));

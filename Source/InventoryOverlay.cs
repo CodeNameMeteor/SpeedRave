@@ -254,50 +254,45 @@ namespace SpeedRave
                 }
             }
         }
-
         private void OnGUI()
         {
             if (!showInventory || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
-            float startX = 0f;
-            float bottomY = Screen.height - 50f - (textHeight - 45);
+            // 1. Setup dynamic styling
+            textStyle.fontSize = (int)textHeight;
+            float startX = 10f; // Added a small margin from the left edge
 
-            // Draw Cheese and Fruit
+            // 2. Calculate the base Y (starting from the bottom)
+            // We subtract iconSize to ensure the bottom-most icon stays on screen
+            float currentY = Screen.height - iconSize ;
+
             bool canShowLogos = useIcons && cheeseTexture != null && fruitTexture != null;
 
+            // 3. Draw Cheese and Fruit
             if (canShowLogos)
             {
-                float fruitY = bottomY;
-                DrawRow(startX, fruitY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
+                // Draw Fruit (Bottom row)
+                DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
 
-                float cheeseY = fruitY - rowHeight;
-                DrawRow(startX, cheeseY, cheeseTexture, new Rect(0, 0, 1, 1), foodControl.cheese.ToString());
+                // Move Y up for the Cheese row
+                currentY -= (iconSize + padding);
+
+                // Draw Cheese (Next row up)
+                DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), foodControl.cheese.ToString());
+
+                // Move Y up again to start drawing the Item list
+                currentY -= (iconSize + padding);
             }
             else
             {
+                // Text-only fallback
                 string txt = $"Cheese: {foodControl.cheese}    Fruit: {foodControl.fruit}";
-
-                GUIStyle shadow = new GUIStyle(textStyle);
-                shadow.normal.textColor = Color.black;
-                shadow.font = textStyle.font;
-
-                GUI.Label(new Rect(startX + 2, bottomY + 2, 400, textHeight), txt, shadow);
-                GUI.Label(new Rect(startX, bottomY, 400, textHeight), txt, textStyle);
+                DrawTextWithShadow(startX, currentY, txt);
+                currentY -= textHeight + padding;
             }
 
-            // Draw Items
-            float itemsStartY = bottomY;
-            if (canShowLogos)
-            {
-                itemsStartY = (bottomY - rowHeight) - rowHeight;
-            }
-            else
-            {
-                itemsStartY = bottomY - rowHeight;
-            }
-
-            float currentX = startX;
-
+            // 4. Draw Items (Collected Items)
+            float itemX = startX;
             for (int i = 0; i < displayList.Count; i++)
             {
                 Texture tex = displayList[i];
@@ -305,15 +300,17 @@ namespace SpeedRave
 
                 if (tex != null)
                 {
+                    DrawIconWithShadow(itemX, currentY, iconSize, tex, uv);
+
                     if (verticalIcons)
                     {
-                        DrawIconWithShadow(currentX, itemsStartY, iconSize, tex, uv);
-                        itemsStartY -= iconSize + padding;
+                        // Stack upwards
+                        currentY -= (iconSize + padding);
                     }
                     else
                     {
-                        DrawIconWithShadow(currentX, itemsStartY, iconSize, tex, uv);
-                        currentX += iconSize + padding;
+                        // Grid rightwards
+                        itemX += (iconSize + padding);
                     }
                 }
             }
