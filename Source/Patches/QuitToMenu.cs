@@ -7,13 +7,13 @@ namespace SpeedRave.Patches
 {
     static class QuitToMenuPatch
     {
-        public static bool Use;
+        //public static bool Use;
 
         [HarmonyPatch(typeof(FoodControl), "Update")]
         [HarmonyPrefix]
         static void FoodControlUpdatePatch(FoodControl __instance)
         {
-            if(Use)
+            if(Plugin.QuitToMenu.Value)
             {
                 if (__instance.display && Input.GetButtonDown("Cancel"))
                 {
@@ -48,7 +48,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         static void TitleScreenControlerStartPatch(global::TitleScreenControler __instance)
         {
-            if(Use)
+            if (Plugin.QuitToMenu.Value)
             {
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
@@ -60,7 +60,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         static void TitleScreenControlerStartGamePatch(global::TitleScreenControler __instance)
         {
-            if(Use)
+            if (Plugin.QuitToMenu.Value)
             {
                 __instance.ClearSaveData();
             }

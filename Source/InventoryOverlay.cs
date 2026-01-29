@@ -10,13 +10,13 @@ namespace SpeedRave
     public class InventoryOverlay : MonoBehaviour
     {
         // Settings
-        public static bool showInventory;
-        public static bool useIcons;
-        public static bool verticalIcons;
+        //public static bool showInventory = Plugin.InventoryOverlayEnabled.Value;
+        //public static bool useIcons = Plugin.UseIcons.Value;
+        //public static bool verticalIcons = Plugin.VerticalIcons.Value;
 
-        public static float iconSize;
-        public static float padding;
-        public static float textHeight;
+        //public static float iconSize = Plugin.IconSize.Value;
+        //public static float padding = Plugin.Padding.Value;
+        //public static float textHeight = Plugin.TextHeight.Value;
         public static float rowHeight = 55;
 
         // Flags
@@ -58,7 +58,7 @@ namespace SpeedRave
         {
             textStyle = new GUIStyle();
             textStyle.normal.textColor = Color.white;
-            textStyle.fontSize = (int)textHeight;
+            textStyle.fontSize = (int)Plugin.TextHeight.Value;
             textStyle.alignment = TextAnchor.MiddleLeft;
             textStyle.richText = true;
 
@@ -166,7 +166,7 @@ namespace SpeedRave
                 // Attempt to load local textures immediately
                 LoadLocalTextures();
 
-                // Find Item Textures (Keep existing logic for game items)
+                // Find Item Textures 
                 foreach (var item in allItems)
                 {
                     if (item.texture != null) continue;
@@ -256,42 +256,38 @@ namespace SpeedRave
         }
         private void OnGUI()
         {
-            if (!showInventory || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
+            if (!Plugin.InventoryOverlayEnabled.Value|| !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
-            // 1. Setup dynamic styling
-            textStyle.fontSize = (int)textHeight;
+
+            textStyle.fontSize = (int)Plugin.TextHeight.Value;
             float startX = 10f; // Added a small margin from the left edge
 
-            // 2. Calculate the base Y (starting from the bottom)
+
             // We subtract iconSize to ensure the bottom-most icon stays on screen
-            float currentY = Screen.height - iconSize ;
+            float currentY = Screen.height - Plugin.IconSize.Value;
 
-            bool canShowLogos = useIcons && cheeseTexture != null && fruitTexture != null;
+            bool canShowLogos = Plugin.UseIcons.Value && cheeseTexture != null && fruitTexture != null;
 
-            // 3. Draw Cheese and Fruit
             if (canShowLogos)
             {
                 // Draw Fruit (Bottom row)
                 DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
 
                 // Move Y up for the Cheese row
-                currentY -= (iconSize + padding);
+                currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
 
-                // Draw Cheese (Next row up)
                 DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), foodControl.cheese.ToString());
 
-                // Move Y up again to start drawing the Item list
-                currentY -= (iconSize + padding);
+                currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
             }
             else
             {
                 // Text-only fallback
                 string txt = $"Cheese: {foodControl.cheese}    Fruit: {foodControl.fruit}";
                 DrawTextWithShadow(startX, currentY, txt);
-                currentY -= textHeight + padding;
+                currentY -= Plugin.TextHeight.Value + Plugin.Padding.Value;
             }
 
-            // 4. Draw Items (Collected Items)
             float itemX = startX;
             for (int i = 0; i < displayList.Count; i++)
             {
@@ -300,17 +296,17 @@ namespace SpeedRave
 
                 if (tex != null)
                 {
-                    DrawIconWithShadow(itemX, currentY, iconSize, tex, uv);
+                    DrawIconWithShadow(itemX, currentY, Plugin.IconSize.Value, tex, uv);
 
-                    if (verticalIcons)
+                    if (Plugin.VerticalIcons.Value)
                     {
                         // Stack upwards
-                        currentY -= (iconSize + padding);
+                        currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
                     }
                     else
                     {
                         // Grid rightwards
-                        itemX += (iconSize + padding);
+                        itemX += (Plugin.IconSize.Value + Plugin.Padding.Value);
                     }
                 }
             }
@@ -318,10 +314,10 @@ namespace SpeedRave
 
         private void DrawRow(float x, float y, Texture icon, Rect uv, string countText)
         {
-            DrawIconWithShadow(x, y, iconSize, icon, uv);
+            DrawIconWithShadow(x, y, Plugin.IconSize.Value, icon, uv);
 
-            float textX = x + iconSize + 10f;
-            float textY = y + (iconSize / 2f) - (textHeight / 2f);
+            float textX = x + Plugin.IconSize.Value + 10f;
+            float textY = y + (Plugin.IconSize.Value / 2f) - (Plugin.TextHeight.Value / 2f);
 
             DrawTextWithShadow(textX, textY, countText);
         }
@@ -346,8 +342,8 @@ namespace SpeedRave
             shadowStyle.normal.textColor = Color.black;
             shadowStyle.font = textStyle.font;
 
-            GUI.Label(new Rect(x + 2, y + 2, 200, textHeight), content, shadowStyle);
-            GUI.Label(new Rect(x, y, 200, textHeight), content, textStyle);
+            GUI.Label(new Rect(x + 2, y + 2, 200, Plugin.TextHeight.Value), content, shadowStyle);
+            GUI.Label(new Rect(x, y, 200, Plugin.TextHeight.Value), content, textStyle);
         }
     }
 }

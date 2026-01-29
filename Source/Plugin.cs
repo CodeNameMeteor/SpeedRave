@@ -1,5 +1,6 @@
-﻿using BepInEx.Logging;
-using BepInEx;
+﻿using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
 using HarmonyLib;
 using SpeedRave.Patches;
 using UnityEngine;
@@ -21,8 +22,40 @@ namespace SpeedRave
 
         internal ManualLogSource mls;
 
+        // --- Config Entries ---
+        public static ConfigEntry<bool> QuitToMenu;
+        public static ConfigEntry<bool> RemoveMusic;
+        public static ConfigEntry<bool> QuickStart;
+        public static ConfigEntry<bool> SeedEnabled;
+
+        public static ConfigEntry<bool> TrainerEnabled;
+
+        public static ConfigEntry<bool> AutosplitterEnabled;
+        public static ConfigEntry<bool> TwentyResourceSplit;
+        public static ConfigEntry<bool> TwentyFruitSplit;
+        public static ConfigEntry<bool> KeySplit;
+        public static ConfigEntry<bool> ItemSplit;
+
+        public static ConfigEntry<string> AddCheeseBind;
+        public static ConfigEntry<string> RemoveCheeseBind;
+        public static ConfigEntry<string> AddFruitBind;
+        public static ConfigEntry<string> RemoveFruitBind;
+        public static ConfigEntry<string> LockBind;
+        public static ConfigEntry<string> StorePositionBind;
+        public static ConfigEntry<string> RestorePositionBind;
+        public static ConfigEntry<string> OpenTrainerBind;
+
+        public static ConfigEntry<bool> InventoryOverlayEnabled;
+        public static ConfigEntry<bool> UseIcons;
+        public static ConfigEntry<bool> VerticalIcons;
+        public static ConfigEntry<float> IconSize;
+        public static ConfigEntry<float> TextHeight;
+        public static ConfigEntry<float> Padding;
+
+
         public Plugin()
         {
+            /*
             QuitToMenuPatch.Use = Config.Bind("Patches", "Quit To Menu", true).Value;
 
             RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
@@ -55,10 +88,42 @@ namespace SpeedRave
             InventoryOverlay.textHeight = Config.Bind("Inventory Overlay", "Text Height", 45f).Value;
             InventoryOverlay.iconSize = Config.Bind("Inventory Overlay", "Icon Size", 50f).Value;
             InventoryOverlay.padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f).Value;
+            */
         }
 
          void Awake()
          {
+            // --- Binding Values ---
+            QuitToMenu = Config.Bind("Patches", "Quit To Menu", true);
+            RemoveMusic = Config.Bind("Patches", "Remove Music", false);
+            QuickStart = Config.Bind("Patches", "QuickStart", true);
+
+            SeedEnabled = Config.Bind("Seeding", "Set Seed", true);
+
+            TrainerEnabled = Config.Bind("Trainer", "Enable Trainer", true);
+
+            AutosplitterEnabled = Config.Bind("AutoSplitter", "Autosplitter Enabled", true);
+            TwentyResourceSplit = Config.Bind("AutoSplitter", "Twenty Resource Split", false);
+            TwentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false);
+            KeySplit = Config.Bind("AutoSplitter", "Key Split", false);
+            ItemSplit = Config.Bind("AutoSplitter", "Item Split", false);
+
+            AddCheeseBind = Config.Bind("Binds", "Add Cheese Bind", "U");
+            RemoveCheeseBind = Config.Bind("Binds", "Remove Cheese Bind", "I");
+            AddFruitBind = Config.Bind("Binds", "Add Fruit Bind", "O");
+            RemoveFruitBind = Config.Bind("Binds", "Remove Fruit Bind", "P");
+            LockBind = Config.Bind("Binds", "Scene Lock Bind", "L");
+            StorePositionBind = Config.Bind("Binds", "Store Position Bind", "Z");
+            RestorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X");
+            OpenTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT");
+
+            InventoryOverlayEnabled = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false);
+            UseIcons = Config.Bind("Inventory Overlay", "Use Icons", true);
+            VerticalIcons = Config.Bind("Inventory Overlay", "Vertical Icons", true);
+            IconSize = Config.Bind("Inventory Overlay", "Icon Size", 60f);
+            TextHeight = Config.Bind("Inventory Overlay", "Text Height", 50f);
+            Padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f);
+
             _mod = new GameObject("SpeedRaveGUI");
             _mod.AddComponent<GUIComponent>();
             _mod.AddComponent<Autosplitter>();
@@ -81,5 +146,6 @@ namespace SpeedRave
             harmony.PatchAll(typeof(SceneLock));
             harmony.PatchAll(typeof(CursorLockFix));
         }
+        public static void SaveConfig() => Instance.Config.Save();
     }
 }

@@ -7,7 +7,7 @@ namespace SpeedRave.Patches
 {
     static class SetSeedPatchs
     {
-        public static bool Use;
+        //public static bool Use;
         public static int Seed;
         public static int lastRandomSeed = 0;
         public static bool randomSeed = true;
@@ -32,7 +32,7 @@ namespace SpeedRave.Patches
         [HarmonyPrefix]
         public static void StoreState()
         {
-            if (Use)
+            if (Plugin.SeedEnabled.Value)
             {
                 messyState = Random.state;
                 Random.state = state;
@@ -52,7 +52,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void RestoreState()
         {
-            if (Use)
+            if (Plugin.SeedEnabled.Value)
             {
                 state = Random.state;
                 Random.state = messyState;
@@ -63,9 +63,9 @@ namespace SpeedRave.Patches
         [HarmonyPrefix]
         public static void Init()
         {
-            if (Use)
+            if (Plugin.SeedEnabled.Value)
             {
-                if(randomSeed)
+                if (randomSeed)
                 {
                     
                     uint[] state = new uint[4];
@@ -95,7 +95,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void addSeedText(FoodControl __instance)
         {
-            if (Use)
+            if (Plugin.SeedEnabled.Value)
             {
                 foodControlSeedText = GameObject.Instantiate(__instance.inventoryText.gameObject, __instance.inventoryText.transform);
                 foodControlSeedText.name = "seedText";
@@ -117,9 +117,11 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void UpdateSeedText(FoodControl __instance)
         {
-            if (Use)
+            if (Plugin.SeedEnabled.Value && foodControlSeedText != null)
             {
+
                 SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
+                foodControlSeedText.SetActive(Plugin.SeedEnabled.Value);
                 seedSTM.text = "Seed: " + Seed;
             }
         }
@@ -128,7 +130,7 @@ namespace SpeedRave.Patches
         public static void ModifyTitleButtons(TitleScreenControler __instance)
         {
 
-            if(Use)
+            if (Plugin.SeedEnabled.Value)
             {
                 SuperTextMesh seedSTM = seedText.GetComponent<SuperTextMesh>();
                 seedSTM.text = "Seed: " + Seed;
@@ -140,7 +142,7 @@ namespace SpeedRave.Patches
         {
             //ModifyButtonPosition(__instance.titleButtons, "ExitButton", new Vector3(-60.0f,0,0));
             // Clone the original button GameObject
-            if(seedText == null || Use)
+            if(seedText == null )
             {
                 Transform startButton = __instance.titleButtons.transform.Find("CreditsButton");
 
@@ -151,6 +153,7 @@ namespace SpeedRave.Patches
 
                 //moving the text to a better position
                 seedText.transform.localPosition -= new Vector3(760f, 0f, 0f);
+                seedText.SetActive(Plugin.SeedEnabled.Value);
             }
 
         }

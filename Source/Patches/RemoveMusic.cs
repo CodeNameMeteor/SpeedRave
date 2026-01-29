@@ -5,14 +5,14 @@ namespace SpeedRave.Patches
 {
     static class RemoveMusicPatch
     {
-        public static bool Use;
+        //public static bool Use;
 
         
         [HarmonyPatch(typeof(global::LoadPlayerUpgrades), "Start")]
         [HarmonyPostfix]
         static void LoadPlayerUpgradesStartPatch(global::LoadPlayerUpgrades __instance)
         {
-            if(Use)
+            if(Plugin.RemoveMusic.Value)
             {
                 
                 foreach (AudioSource audioSource in UnityEngine.Object.FindObjectsOfType(typeof(AudioSource)) as AudioSource[])
@@ -29,7 +29,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         static void TitleScreenControlerStartPatch(global::TitleScreenControler __instance)
         {
-            if (Use)
+            if (Plugin.RemoveMusic.Value)
             {
 
                 foreach (AudioSource audioSource in UnityEngine.Object.FindObjectsOfType(typeof(AudioSource)) as AudioSource[])

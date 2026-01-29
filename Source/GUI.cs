@@ -114,18 +114,18 @@ namespace SpeedRave
             300
         );
 
-        public static bool Use;
+        //public static bool Use;
 
         public static bool locked = false;
 
-        public static string addCheeseBind = "u";
-        public static string removeCheeseBind = "i";
-        public static string addFruitBind = "o";
-        public static string removeFruitBind = "p";
-        public static string lockBind = "l";
-        public static string storePositionBind = "z";
-        public static string restorePositionBind = "x";
-        public static string openTrainerBind = "insert";
+        public static string addCheeseBind = Plugin.AddCheeseBind.Value;
+        public static string removeCheeseBind = Plugin.RemoveCheeseBind.Value;
+        public static string addFruitBind = Plugin.AddFruitBind.Value;
+        public static string removeFruitBind = Plugin.RemoveFruitBind.Value;
+        public static string lockBind = Plugin.LockBind.Value;
+        public static string storePositionBind = Plugin.StorePositionBind.Value;
+        public static string restorePositionBind = Plugin.RestorePositionBind.Value;
+        public static string openTrainerBind = Plugin.OpenTrainerBind.Value;
 
 
         //private Autosplitter autosplitter;
@@ -141,11 +141,12 @@ namespace SpeedRave
         private string seedInput = "";
         private int parsedSeed = 0;
 
+        private string fpsInput = "-1";
+
 
         private void Update()
         {
-            if (Use)
-            {
+
                 if (Input.GetKeyDown(openTrainerBind.ToLower()))
                 {
                     showGUI = !showGUI;
@@ -158,7 +159,8 @@ namespace SpeedRave
                         configShowGUI = false;
                     }
                 }
-
+            if (Plugin.TrainerEnabled.Value)
+            {
                 if (Input.GetKeyDown(storePositionBind.ToLower()))
                 {
                     StorePlayerPosition();
@@ -199,7 +201,7 @@ namespace SpeedRave
 
         private void Start()
         {
-            if (Autosplitter.Instance != null && Autosplitter.Use)
+            if (Autosplitter.Instance != null && Plugin.AutosplitterEnabled.Value)
             {
                 Autosplitter.Instance.ConnectToLiveSplit();
             }
@@ -227,58 +229,66 @@ namespace SpeedRave
         {
             configScroll = GUILayout.BeginScrollView(configScroll);
             GUILayout.Label("<b>Patches</b>");
-            QuickStartPatch.Use = GUILayout.Toggle(QuickStartPatch.Use, " Quick Start");
-            QuitToMenuPatch.Use = GUILayout.Toggle(QuitToMenuPatch.Use, " Quit to Menu");
-            RemoveMusicPatch.Use = GUILayout.Toggle(RemoveMusicPatch.Use, " Remove Music");
+            Plugin.QuickStart.Value = GUILayout.Toggle(Plugin.QuickStart.Value, " Quick Start");
+            Plugin.QuitToMenu.Value = GUILayout.Toggle(Plugin.QuitToMenu.Value, " Quit to Menu");
+            Plugin.RemoveMusic.Value = GUILayout.Toggle(Plugin.RemoveMusic.Value, " Remove Music");
 
 
             GUILayout.Label("<b>Autosplitter</b>");
 
-            Autosplitter.Use = GUILayout.Toggle(Autosplitter.Use, " Enable Autosplitter");
-            Autosplitter.twentyResourceSplit = GUILayout.Toggle(Autosplitter.twentyResourceSplit, " Split on 20 Resources");
-            Autosplitter.keySplit = GUILayout.Toggle(Autosplitter.keySplit, " Split on Key");
-            Autosplitter.twentyFruitSplit = GUILayout.Toggle(Autosplitter.twentyFruitSplit, " Split on 20 Fruit");
-            Autosplitter.itemSplit = GUILayout.Toggle(Autosplitter.itemSplit, " Split on Item Pickup");
+            Plugin.AutosplitterEnabled.Value = GUILayout.Toggle(Plugin.AutosplitterEnabled.Value, " Enable Autosplitter");
+            Plugin.TwentyResourceSplit.Value = GUILayout.Toggle(Plugin.TwentyResourceSplit.Value, " Split on 20 Resources");
+            Plugin.KeySplit.Value = GUILayout.Toggle(Plugin.KeySplit.Value, " Split on Key");
+            Plugin.TwentyFruitSplit.Value = GUILayout.Toggle(Plugin.TwentyFruitSplit.Value, " Split on 20 Fruit");
+            Plugin.ItemSplit.Value = GUILayout.Toggle(Plugin.ItemSplit.Value, " Split on Item Pickup");
 
             GUILayout.Space(10);
 
             GUILayout.Label("<b>Seed Control</b>");
 
-            SetSeedPatchs.Use = GUILayout.Toggle(SetSeedPatchs.Use, " Enable Seeds");
+            Plugin.SeedEnabled.Value = GUILayout.Toggle(Plugin.SeedEnabled.Value, " Enable Seeding");
 
             GUILayout.Label("<b>Inventory Overlay</b>");
 
             // Boolean Toggle
-            InventoryOverlay.showInventory = GUILayout.Toggle(InventoryOverlay.showInventory, " Show Inventory");
-            InventoryOverlay.useIcons = GUILayout.Toggle(InventoryOverlay.useIcons, " Use Icons");
-            InventoryOverlay.verticalIcons = GUILayout.Toggle(InventoryOverlay.verticalIcons, " Vertical Item Icons");
+            Plugin.InventoryOverlayEnabled.Value = GUILayout.Toggle(Plugin.InventoryOverlayEnabled.Value, " Enable Inventory Overlay");
+            Plugin.UseIcons.Value = GUILayout.Toggle(Plugin.UseIcons.Value, " Use Icons");
+            Plugin.VerticalIcons.Value = GUILayout.Toggle(Plugin.VerticalIcons.Value, " Vertical Item Icons");
 
             // Float Slider for Icon Size
-            GUILayout.Label($"Icon Size: {InventoryOverlay.iconSize:F0}");
-            InventoryOverlay.iconSize = GUILayout.HorizontalSlider(InventoryOverlay.iconSize, 20f, 150f);
+            GUILayout.Label($"Icon Size: {Plugin.IconSize.Value:F0}");
+            Plugin.IconSize.Value = GUILayout.HorizontalSlider(Plugin.IconSize.Value, 20f, 150f);
 
             // Float Slider for Text Height
-            GUILayout.Label($"Text Size: {InventoryOverlay.textHeight:F0}");
-            InventoryOverlay.textHeight = GUILayout.HorizontalSlider(InventoryOverlay.textHeight, 20f, 150f);
+            GUILayout.Label($"Text Size: {Plugin.TextHeight.Value:F0}");
+            Plugin.TextHeight.Value = GUILayout.HorizontalSlider(Plugin.TextHeight.Value, 20f, 150f);
 
             // Float Slider for Logo Padding
-            GUILayout.Label($"Logo Padding: {InventoryOverlay.padding:F0}");
-            InventoryOverlay.padding = GUILayout.HorizontalSlider(InventoryOverlay.padding, 10f, 150f);
+            GUILayout.Label($"Item Padding: {Plugin.Padding.Value:F0}");
+            Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
 
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
 
-            GUIComponent.Use = GUILayout.Toggle(GUIComponent.Use, " Enable Trainer");
+            Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Binds (Press Enter to apply)</b>");
-            GUIComponent.addCheeseBind = GUILayout.TextField(GUIComponent.addCheeseBind);
-            GUIComponent.removeCheeseBind = GUILayout.TextField(GUIComponent.removeCheeseBind);
-            GUIComponent.addFruitBind = GUILayout.TextField(GUIComponent.addFruitBind);
-            GUIComponent.removeFruitBind = GUILayout.TextField(GUIComponent.removeFruitBind);
-            GUIComponent.lockBind = GUILayout.TextField(GUIComponent.lockBind);
-            GUIComponent.storePositionBind = GUILayout.TextField(GUIComponent.storePositionBind);
-            GUIComponent.restorePositionBind = GUILayout.TextField(GUIComponent.restorePositionBind);
+            Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
+            Plugin.RemoveCheeseBind.Value = GUILayout.TextField(Plugin.RemoveCheeseBind.Value);
+            Plugin.AddFruitBind.Value = GUILayout.TextField(Plugin.AddFruitBind.Value);
+            Plugin.RemoveFruitBind.Value = GUILayout.TextField(Plugin.RemoveFruitBind.Value);
+            Plugin.LockBind.Value = GUILayout.TextField(Plugin.LockBind.Value);
+            Plugin.StorePositionBind.Value = GUILayout.TextField(Plugin.StorePositionBind.Value);
+            Plugin.RestorePositionBind.Value = GUILayout.TextField(Plugin.RestorePositionBind.Value);
 
+            // Save
+            GUILayout.Space(20);
+            GUI.color = Color.green;
+            if (GUILayout.Button("SAVE TO CONFIG"))
+            {
+                Plugin.SaveConfig();
+            }
+            GUI.color = Color.white;
 
             GUILayout.EndScrollView();
             GUI.DragWindow();
@@ -300,7 +310,7 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
-            if(Autosplitter.Use)
+            if(Plugin.AutosplitterEnabled.Value)
             {
                 // Autosplitter 
                 GUILayout.Label("<b>Autosplitter</b>");
@@ -315,7 +325,7 @@ namespace SpeedRave
             }
 
             // Seed Control
-            if(SetSeedPatchs.Use)
+            if(Plugin.SeedEnabled.Value)
             {
                 GUILayout.Label("<b>Seed Control</b>");
                 GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
@@ -343,7 +353,7 @@ namespace SpeedRave
                 Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
             }
             
-            if(GUIComponent.Use)
+            if(Plugin.TrainerEnabled.Value)
             {
                 // Room Selector
                 GUILayout.Label("<b>Scene Selector</b>");
@@ -388,7 +398,20 @@ namespace SpeedRave
 
                 GUILayout.Space(5);
             }
+            /*
+            GUILayout.Space(5);
+            GUILayout.Label($"Current Framerate: {1f / Time.unscaledDeltaTime:F2} FPS");
+            fpsInput = GUILayout.TextField(fpsInput, GUILayout.Width(100));
+            if (GUILayout.Button("Change FrameRate") )
+            {
+                if(int.TryParse(fpsInput, out int parsedFPS))
+                {
+                    Application.targetFrameRate = parsedFPS;
 
+                }
+
+            }
+            */
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
             {

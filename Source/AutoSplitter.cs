@@ -22,7 +22,7 @@ namespace SpeedRave
         public bool gotBottlecap = false;
         public bool gotDuck = false;
         public bool gotKey = false;
-        public static bool Use = true; // Assumed true for logic
+        //public static bool Use = true; // Assumed true for logic
 
         // Config flags
         public static bool twentyResourceSplit;
@@ -51,7 +51,7 @@ namespace SpeedRave
         public void Start()
         {
             // Try to connect on startup, but do it silently in the background
-            if (Use)
+            if (Plugin.AutosplitterEnabled.Value)
             {
                 ConnectToLiveSplit();
             }
@@ -174,29 +174,29 @@ namespace SpeedRave
             {
                 var playerFood = ReferenceManager.ActiveFoodControl;
 
-                if (twentyResourceSplit && !gotResources && (playerFood.cheese + playerFood.fruit >= 20))
+                if (Plugin.TwentyResourceSplit.Value && !gotResources && (playerFood.cheese + playerFood.fruit >= 20))
                 {
                     AttemptSendCommand("split");
                     gotResources = true;
                 }
 
-                if (twentyFruitSplit && !gotFruit && playerFood.fruit >= 20)
+                if (Plugin.TwentyFruitSplit.Value && !gotFruit && playerFood.fruit >= 20)
                 {
                     AttemptSendCommand("split");
                     gotFruit = true;
                 }
 
-                if (keySplit && !gotKey && playerFood.haveKey)
+                if (Plugin.KeySplit.Value && !gotKey && playerFood.haveKey)
                 {
                     AttemptSendCommand("split");
                     gotKey = true;
                 }
 
-                if (playerFood.hasBottlecap && !gotBottlecap) { AttemptSendCommand("split"); gotBottlecap = true; }
-                else if (playerFood.hasPyramid && !gotPyramid) { AttemptSendCommand("split"); gotPyramid = true; }
-                else if (playerFood.hasMug && !gotMug) { AttemptSendCommand("split"); gotMug = true; }
-                else if (playerFood.hasDuck && !gotDuck) { AttemptSendCommand("split"); gotDuck = true; }
-                else if (playerFood.hasPizza && !gotPizza) { AttemptSendCommand("split"); gotPizza = true; }
+                if (playerFood.hasBottlecap && !gotBottlecap && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotBottlecap = true; }
+                else if (playerFood.hasPyramid && !gotPyramid && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotPyramid = true; }
+                else if (playerFood.hasMug && !gotMug && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotMug = true; }
+                else if (playerFood.hasDuck && !gotDuck && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotDuck = true; }
+                else if (playerFood.hasPizza && !gotPizza && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotPizza = true; }
 
                 if (currentScene.Contains("ending"))
                 {

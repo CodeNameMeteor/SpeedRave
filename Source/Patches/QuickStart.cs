@@ -10,13 +10,12 @@ namespace SpeedRave.Patches
 {
     static class QuickStartPatch
     {
-        public static bool Use;
 
         [HarmonyPatch(typeof(TitleScreenControler), "Update")]
         [HarmonyPostfix]
         static void TitleScreenControlerUpdatePatch(TitleScreenControler __instance)
         {
-            if (Use)
+            if (Plugin.QuickStart.Value)
             {
                 if (Input.GetButtonDown("Jump"))
                 {
