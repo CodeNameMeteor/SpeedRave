@@ -173,7 +173,22 @@ namespace SpeedRave
                     RestorePlayerPosition();
                 }
 
-
+                if (Input.GetKeyDown(Plugin.IncrementSceneBind.Value.ToLower()))
+                {
+                    sceneIndex = GetCurrentSceneIndex();
+                    sceneIndex = (sceneIndex + 1) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                }
+                if (Input.GetKeyDown(Plugin.DecrementSceneBind.Value.ToLower()))
+                {
+                    sceneIndex = GetCurrentSceneIndex();
+                    sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                }
+                if (Input.GetKeyDown(lockBind.ToLower()))
+                {
+                    ToggleSceneLock();
+                }
                 if (ReferenceManager.ActiveFoodControl != null)
                 {
                     if (Input.GetKeyDown(addCheeseBind.ToLower()))
@@ -193,22 +208,7 @@ namespace SpeedRave
                         ModifyFruit(-1);
                     }
                 }
-                if(Input.GetKeyDown(Plugin.IncrementSceneBind.Value.ToLower()))
-                {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex + 1) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
-                }
-                if (Input.GetKeyDown(Plugin.DecrementSceneBind.Value.ToLower()))
-                {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
-                }
-                if (Input.GetKeyDown(lockBind.ToLower()))
-                {
-                    ToggleSceneLock();
-                }
+
             }
         }
 
