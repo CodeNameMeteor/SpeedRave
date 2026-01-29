@@ -121,7 +121,6 @@ namespace SpeedRave.Patches
             {
 
                 SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
-                foodControlSeedText.SetActive(Plugin.SeedEnabled.Value);
                 seedSTM.text = "Seed: " + Seed;
             }
         }
@@ -129,11 +128,17 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void ModifyTitleButtons(TitleScreenControler __instance)
         {
+            if (seedText == null) return;
+
+            seedText.SetActive(Plugin.SeedEnabled.Value);
 
             if (Plugin.SeedEnabled.Value)
             {
                 SuperTextMesh seedSTM = seedText.GetComponent<SuperTextMesh>();
-                seedSTM.text = "Seed: " + Seed;
+                if (seedSTM != null)
+                {
+                    seedSTM.text = "Seed: " + Seed;
+                }
             }
         }
         [HarmonyPatch(typeof(TitleScreenControler), "Start")]

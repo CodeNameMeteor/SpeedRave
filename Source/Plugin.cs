@@ -44,6 +44,8 @@ namespace SpeedRave
         public static ConfigEntry<string> StorePositionBind;
         public static ConfigEntry<string> RestorePositionBind;
         public static ConfigEntry<string> OpenTrainerBind;
+        public static ConfigEntry<string> IncrementSceneBind;
+        public static ConfigEntry<string> DecrementSceneBind;
 
         public static ConfigEntry<bool> InventoryOverlayEnabled;
         public static ConfigEntry<bool> UseIcons;
@@ -116,6 +118,8 @@ namespace SpeedRave
             StorePositionBind = Config.Bind("Binds", "Store Position Bind", "Z");
             RestorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X");
             OpenTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT");
+            IncrementSceneBind = Config.Bind("Binds", "Increment Scene Bind", "J");
+            DecrementSceneBind = Config.Bind("Binds", "Decrement Scene Bind", "K");
 
             InventoryOverlayEnabled = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false);
             UseIcons = Config.Bind("Inventory Overlay", "Use Icons", true);

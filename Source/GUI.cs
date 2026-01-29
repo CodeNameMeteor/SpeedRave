@@ -101,6 +101,8 @@ namespace SpeedRave
 
         private Scene currentScene;
 
+        private int sceneIndex = 0;
+
 
         private const int MAIN_WINDOW_ID = 0;
         private const int SCENE_WINDOW_ID = 1;
@@ -191,7 +193,18 @@ namespace SpeedRave
                         ModifyFruit(-1);
                     }
                 }
-
+                if(Input.GetKeyDown(Plugin.IncrementSceneBind.Value.ToLower()))
+                {
+                    sceneIndex = GetCurrentSceneIndex();
+                    sceneIndex = (sceneIndex + 1) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                }
+                if (Input.GetKeyDown(Plugin.DecrementSceneBind.Value.ToLower()))
+                {
+                    sceneIndex = GetCurrentSceneIndex();
+                    sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                }
                 if (Input.GetKeyDown(lockBind.ToLower()))
                 {
                     ToggleSceneLock();
@@ -273,15 +286,29 @@ namespace SpeedRave
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Binds (Press Enter to apply)</b>");
+            GUILayout.Label("<b>Add Cheese Bind</b>");
             Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
+            GUILayout.Label("<b>Remove Cheese Bind</b>");
             Plugin.RemoveCheeseBind.Value = GUILayout.TextField(Plugin.RemoveCheeseBind.Value);
+            GUILayout.Label("<b>Add Fruit Bind</b>");
             Plugin.AddFruitBind.Value = GUILayout.TextField(Plugin.AddFruitBind.Value);
+            GUILayout.Label("<b>Remove Fruit Bind</b>");
             Plugin.RemoveFruitBind.Value = GUILayout.TextField(Plugin.RemoveFruitBind.Value);
+            GUILayout.Label("<b>Lock Scene Bind</b>");
             Plugin.LockBind.Value = GUILayout.TextField(Plugin.LockBind.Value);
+            GUILayout.Label("<b>Store Position Bind</b>");
             Plugin.StorePositionBind.Value = GUILayout.TextField(Plugin.StorePositionBind.Value);
+            GUILayout.Label("<b>Restore Position Bind</b>");
             Plugin.RestorePositionBind.Value = GUILayout.TextField(Plugin.RestorePositionBind.Value);
+            GUILayout.Label("<b>Open Trainer Bind</b>");
+            Plugin.OpenTrainerBind.Value = GUILayout.TextField(Plugin.OpenTrainerBind.Value);
+            GUILayout.Label("<b>Increment Scene Bind</b>");
+            Plugin.IncrementSceneBind.Value = GUILayout.TextField(Plugin.IncrementSceneBind.Value);
+            GUILayout.Label("<b>Decrement Scene Bind</b>");
+            Plugin.DecrementSceneBind.Value = GUILayout.TextField(Plugin.DecrementSceneBind.Value);
 
             // Save
+            /*
             GUILayout.Space(20);
             GUI.color = Color.green;
             if (GUILayout.Button("SAVE TO CONFIG"))
@@ -289,7 +316,7 @@ namespace SpeedRave
                 Plugin.SaveConfig();
             }
             GUI.color = Color.white;
-
+            */
             GUILayout.EndScrollView();
             GUI.DragWindow();
         }
@@ -487,6 +514,18 @@ namespace SpeedRave
                     }
                 }
             }
+        }
+        private int GetCurrentSceneIndex()
+        {
+            for (int i = 0; i < Scenes.Length; i++)
+            {
+                if (Scenes[i].ToLower() == SceneManager.GetActiveScene().name.ToLower())
+                {
+                    return i;
+                }
+            }
+            Debug.Log(SceneManager.GetActiveScene().name);
+            return 0;
         }
     }
 }
