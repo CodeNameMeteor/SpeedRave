@@ -220,7 +220,10 @@ namespace SpeedRave
             }
             else
             {
-                Debug.LogError("Autosplitter component not found");
+                if (Plugin.Debug.Value)
+                {
+                    Debug.LogError("Autosplitter component not found");
+                }
             }
         }
         private void OnGUI()
@@ -228,14 +231,20 @@ namespace SpeedRave
             if (showGUI)
             {
                 winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
-            }
-            if (sceneSelectorShowGUI)
-            {
-                sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
-            }
-            if(configShowGUI)
-            {
-                configWinRect = GUI.Window(2, configWinRect, ConfigWinProc, "SpeedRave Config");
+
+                if (sceneSelectorShowGUI)
+                {
+                    sceneWinRect.x = winRect.x;
+                    sceneWinRect.y = winRect.y + winRect.height + 10; // 10px gap below
+                    sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
+                }
+
+                if (configShowGUI)
+                {
+                    configWinRect.x = winRect.x + winRect.width + 10; // 10px gap to the right
+                    configWinRect.y = winRect.y;
+                    configWinRect = GUI.Window(2, configWinRect, ConfigWinProc, "SpeedRave Config");
+                }
             }
         }
         private void ConfigWinProc(int id)

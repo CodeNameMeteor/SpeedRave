@@ -47,8 +47,11 @@ namespace SpeedRave
                 ActiveFoodControl = GameObject.FindObjectOfType<FoodControl>();
                 if (ActiveFoodControl == null)
                 {
-                    Debug.Log("[SpeedRave] FoodControl missing! Sideloading Sewer_Start...");
+                    if(Plugin.Debug.Value)
+                    {
+                        Debug.Log("[SpeedRave] FoodControl missing! Sideloading Sewer_Start...");
 
+                    }
                     // Load Sewer_Start additively so we don't leave the current room
                     SceneManager.LoadScene("Sewer_Start", LoadSceneMode.Additive);
 
@@ -86,8 +89,10 @@ namespace SpeedRave
                 ActiveFoodControl = null;
             }
 
-
-            Debug.Log("[SpeedRave] References Refreshed");
+            if (Plugin.Debug.Value)
+            {
+                Debug.Log("[SpeedRave] References Refreshed");
+            }
         }
         private static void CleanUpSideloadedScene(Scene scene)
         {
@@ -107,7 +112,10 @@ namespace SpeedRave
                 // hide walls
                 obj.SetActive(false);
             }
-            Debug.Log("[SpeedRave] Sewer_Start logic side-loaded and visuals suppressed.");
+            if (Plugin.Debug.Value)
+            {
+                Debug.Log("[SpeedRave] Sewer_Start logic side-loaded and visuals suppressed.");
+            }
         }
     }
 }

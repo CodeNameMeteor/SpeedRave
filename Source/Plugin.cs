@@ -12,7 +12,7 @@ namespace SpeedRave
     {
         public const string modGUID = "SpeedRave";
         public const string modName = "SpeedRave";
-        public const string modVersion = "0.9.9";
+        public const string modVersion = "1.0.0";
 
         private GameObject _mod;
 
@@ -58,6 +58,9 @@ namespace SpeedRave
 
         // In your Plugin class
         public static ConfigEntry<int> TargetFPS;
+
+        public static ConfigEntry<bool> Debug;
+
 
 
 
@@ -136,8 +139,9 @@ namespace SpeedRave
             Padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f);
 
 
-            TargetFPS = Config.Bind("Peformance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
-            VSyncEnabled = Config.Bind("Peformance", "VSyncEnabled", true, "Enable or disable V-Sync");
+            TargetFPS = Config.Bind("Performance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
+            VSyncEnabled = Config.Bind("Performance", "VSyncEnabled", true, "Enable or disable V-Sync");
+            Debug = Config.Bind("Debug", "Debug", false, "Enable Debug");
 
             QualitySettings.vSyncCount = VSyncEnabled.Value ? 1 : 0;
             Application.targetFrameRate = TargetFPS.Value;
