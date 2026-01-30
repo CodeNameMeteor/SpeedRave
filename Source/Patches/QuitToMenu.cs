@@ -9,6 +9,21 @@ namespace SpeedRave.Patches
     {
         //public static bool Use;
 
+        [HarmonyPatch(typeof(FoodControl), "Start")]
+        [HarmonyPrefix]
+        static void FoodControlStartPatch(FoodControl __instance)
+        {
+            var persistControls = UnityEngine.Object.FindObjectsOfType<PersistControl>();
+            var foodControls = UnityEngine.Object.FindObjectsOfType<FoodControl>();
+            //The way the food_control is programmed is that it is initialised on the start of sewer_start by persist Control
+            //in a typical game you can't go back to sewer_start but as we can just have this here as a precaution
+            if (foodControls.Length > 1)
+            {
+                UnityEngine.Object.Destroy(persistControls[1]);
+                UnityEngine.Object.Destroy(__instance.gameObject);
+            }
+        }
+
         [HarmonyPatch(typeof(FoodControl), "Update")]
         [HarmonyPrefix]
         static void FoodControlUpdatePatch(FoodControl __instance)
@@ -31,6 +46,7 @@ namespace SpeedRave.Patches
                     }
 
                     UnityEngine.Object.Destroy(__instance.gameObject);
+                    UnityEngine.Object.Destroy(UnityEngine.Object.FindObjectOfType<PersistControl>());
                     
                     //Object[] allObjects = Object.FindObjectsOfType(typeof(FoodControl));
                     //foreach (Object obj in allObjects)
