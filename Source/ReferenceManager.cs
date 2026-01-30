@@ -41,17 +41,27 @@ namespace SpeedRave
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             RefreshReferences();
-            if(scene.name.ToLower() == "sewer_start")
-            {
-                var foodControls = UnityEngine.Object.FindObjectsOfType<FoodControl>();
 
-                //The way the food_control is programmed is that it is initialised on the start of sewer_start
-                //in a typical game you can't go back to sewer_start but as we can just have this here as a precaution
-                if (foodControls.Length > 1)
+            if (scene.name.ToLower() != "titlescreen" && scene.name.ToLower() != "credits " && ActiveFoodControl == null)
+            {
+                ActiveFoodControl = GameObject.FindObjectOfType<FoodControl>();
+                if (ActiveFoodControl == null)
                 {
-                    UnityEngine.Object.Destroy(UnityEngine.Object.FindObjectsOfType<FoodControl>()[1]);
+                    Debug.Log("[SpeedRave] FoodControl missing! Sideloading Sewer_Start...");
+
+                    // Load Sewer_Start additively so we don't leave the current room
+                    SceneManager.LoadScene("Sewer_Start", LoadSceneMode.Additive);
+
+                    return;
                 }
+
+ 
             }
+            if (scene.name == "Sewer_Start" && SceneManager.sceneCount > 1)
+            {
+                CleanUpSideloadedScene(scene);
+            }
+
         }
 
         private static void RefreshReferences()
@@ -70,19 +80,6 @@ namespace SpeedRave
             if(ActiveInventory != null)
             {
                 ActiveFoodControl = ActiveInventory.GetComponent<FoodControl>();
-                /*
-                var foodControls = UnityEngine.Object.FindObjectsOfType<FoodControl>();
-
-                //The way the player is programmed is that it is initialised on the start of sewer_start
-                //in a typical game you can't go back to sewer_start but as we can just have this here as a precaution
-                if (foodControls.Length > 1)
-                {
-                    for (int i = foodControls.Length - 1; i > 0; i--)
-                    {
-                        UnityEngine.Object.Destroy(foodControls[i]);
-                    }
-                }
-                */
             }
             else
             {
@@ -91,6 +88,26 @@ namespace SpeedRave
 
 
             Debug.Log("[SpeedRave] References Refreshed");
+        }
+        private static void CleanUpSideloadedScene(Scene scene)
+        {
+            foreach (GameObject obj in scene.GetRootGameObjects())
+            {
+                // don't disable what we need
+                if (obj.GetComponent<PersistControl>() || obj.GetComponent<FoodControl>())
+                    continue;
+
+                // disable cameras, lights, and meshes so they don't interfere with the current room
+                Camera cam = obj.GetComponentInChildren<Camera>();
+                if (cam != null) cam.enabled = false;
+
+                AudioListener listener = obj.GetComponentInChildren<AudioListener>();
+                if (listener != null) listener.enabled = false;
+
+                // hide walls
+                obj.SetActive(false);
+            }
+            Debug.Log("[SpeedRave] Sewer_Start logic side-loaded and visuals suppressed.");
         }
     }
 }

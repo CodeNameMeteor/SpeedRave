@@ -54,6 +54,13 @@ namespace SpeedRave
         public static ConfigEntry<float> TextHeight;
         public static ConfigEntry<float> Padding;
 
+        public static ConfigEntry<bool> VSyncEnabled;
+
+        // In your Plugin class
+        public static ConfigEntry<int> TargetFPS;
+
+
+
 
         public Plugin()
         {
@@ -127,6 +134,13 @@ namespace SpeedRave
             IconSize = Config.Bind("Inventory Overlay", "Icon Size", 60f);
             TextHeight = Config.Bind("Inventory Overlay", "Text Height", 50f);
             Padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f);
+
+
+            TargetFPS = Config.Bind("Peformance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
+            VSyncEnabled = Config.Bind("Peformance", "VSyncEnabled", true, "Enable or disable V-Sync");
+
+            QualitySettings.vSyncCount = VSyncEnabled.Value ? 1 : 0;
+            Application.targetFrameRate = TargetFPS.Value;
 
             _mod = new GameObject("SpeedRaveGUI");
             _mod.AddComponent<GUIComponent>();

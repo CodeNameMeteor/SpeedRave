@@ -280,6 +280,39 @@ namespace SpeedRave
             GUILayout.Label($"Item Padding: {Plugin.Padding.Value:F0}");
             Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
 
+            GUILayout.Label("<b>Performance</b>");
+
+            // V-Sync Toggle
+            bool currentVSync = Plugin.VSyncEnabled.Value;
+            Plugin.VSyncEnabled.Value = GUILayout.Toggle(Plugin.VSyncEnabled.Value, " Enable V-Sync");
+
+            if (currentVSync != Plugin.VSyncEnabled.Value)
+            {
+                // 0 = Don't Sync, 1 = Every V-Blank, 2 = Every Second V-Blank
+                QualitySettings.vSyncCount = Plugin.VSyncEnabled.Value ? 1 : 0;
+            }
+
+            // Only show/allow FPS changes if V-Sync is OFF
+            if (!Plugin.VSyncEnabled.Value)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Target FPS:", GUILayout.Width(80));
+                fpsInput = GUILayout.TextField(fpsInput, GUILayout.Width(60));
+
+                if (GUILayout.Button("Apply FPS"))
+                {
+                    if (int.TryParse(fpsInput, out int parsedFPS))
+                    {
+                        Plugin.TargetFPS.Value = parsedFPS;
+                        Application.targetFrameRate = parsedFPS;
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Label("<color=yellow>FPS Cap ignored while V-Sync is ON</color>");
+            }
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
 
@@ -306,6 +339,8 @@ namespace SpeedRave
             Plugin.IncrementSceneBind.Value = GUILayout.TextField(Plugin.IncrementSceneBind.Value);
             GUILayout.Label("<b>Decrement Scene Bind</b>");
             Plugin.DecrementSceneBind.Value = GUILayout.TextField(Plugin.DecrementSceneBind.Value);
+
+
 
             // Save
             /*
@@ -337,7 +372,8 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
-            if(Plugin.AutosplitterEnabled.Value)
+            //GUILayout.Label($"Current Framerate: {1f / Time.unscaledDeltaTime:F2} FPS");
+            if (Plugin.AutosplitterEnabled.Value)
             {
                 // Autosplitter 
                 GUILayout.Label("<b>Autosplitter</b>");
@@ -425,20 +461,8 @@ namespace SpeedRave
 
                 GUILayout.Space(5);
             }
-            /*
-            GUILayout.Space(5);
-            GUILayout.Label($"Current Framerate: {1f / Time.unscaledDeltaTime:F2} FPS");
-            fpsInput = GUILayout.TextField(fpsInput, GUILayout.Width(100));
-            if (GUILayout.Button("Change FrameRate") )
-            {
-                if(int.TryParse(fpsInput, out int parsedFPS))
-                {
-                    Application.targetFrameRate = parsedFPS;
-
-                }
-
-            }
-            */
+            
+            
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
             {
