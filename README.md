@@ -2,9 +2,9 @@
  A Speedrun Mod for sewer rave
 
 # Features
- * Room Picker. press ``insert`` in game
- * QOL Patches
- * Autosplitter. Start TCP Server in Livesplit (STILL A WIP)
+ * Trainer including Room Picker. press ``insert`` in game
+ * Autosplitter. Start TCP Server in Livesplit
+ * Inventory Overlay
  * Modified Seed Generation Allowing For Set Seed Runs (Thanks To <a href="https://github.com/Som1Lse">Som1Lse</a>)
    
  # Patches
@@ -12,11 +12,10 @@
   * Pressing Space in the main menu will start the game (Enabled By Default)
   * Remove Music (Disabled By Default)
 
-    
-
 # Installation
-* Download [SpeedRave](https://github.com/CodeNameMeteor/SpeedRave/releases).
-* Download [BepInEx](https://github.com/BepInEx/BepInEx/releases/).
+* Download [SpeedRave.zip](https://github.com/CodeNameMeteor/SpeedRave/releases).
+* Download [BepInEx x64](https://github.com/BepInEx/BepInEx/releases/).
 * Extract Bepinex in the game directory ``<game folder>/SewerRaveWindows``
-* Start The Game once, and then add SpeedRave.dll to``<game folder>/SewerRaveWindows/BepInEx/Plugins``
+* Start The Game once
+* Extract SpeedRave.zip to``<game folder>/SewerRaveWindows/BepInEx``
 * To Edit the config go to ``<game folder>/SewerRaveWindows/BepInEx/config`` and edit ``SpeedRave.cfg``.
