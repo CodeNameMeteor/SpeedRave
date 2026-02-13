@@ -13,6 +13,7 @@ namespace SpeedRave
         public bool debug = false;
         public bool gameStarted = false;
         public static bool isLoading = false;
+        public static int endingCount = 0;
 
         public bool gotResources = false;
         public bool gotFruit = false;
@@ -29,6 +30,10 @@ namespace SpeedRave
         public static bool keySplit;
         public static bool twentyFruitSplit;
         public static bool itemSplit;
+
+        public static bool plagueEnding = false;
+        public static bool spaceEnding = false;
+        public static bool trueEnding = false;
 
 
         // Networking stuff
@@ -152,6 +157,7 @@ namespace SpeedRave
 
             //Reset Logic
             if (currentScene == "TitleScreen" && gameStarted)
+
             {
                 AttemptSendCommand("reset");
                 gameStarted = false;
@@ -170,7 +176,7 @@ namespace SpeedRave
             }
 
             // Split Logic
-            if (gameStarted && ReferenceManager.ActiveFoodControl != null)
+            if (ReferenceManager.ActiveFoodControl != null)
             {
                 var playerFood = ReferenceManager.ActiveFoodControl;
 
@@ -198,11 +204,40 @@ namespace SpeedRave
                 else if (playerFood.hasDuck && !gotDuck && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotDuck = true; }
                 else if (playerFood.hasPizza && !gotPizza && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotPizza = true; }
 
-                if (currentScene.Contains("ending"))
+                if(gameStarted && currentScene.Contains("ending"))
                 {
+                    if (currentScene.ToLower() == "plaguending" && !plagueEnding)
+                    {
+                        plagueEnding = true;
+                        AttemptSendCommand("split");
+                        endingCount++;
+                    }
+                    else if (currentScene.ToLower() == "spaceending" && !spaceEnding)
+                    {
+                        spaceEnding = true;
+                        AttemptSendCommand("split");
+                        endingCount++;
+                    }
+                    else if (currentScene.ToLower() == "truending" && !trueEnding)
+                    {
+                        trueEnding = true;
+                        AttemptSendCommand("split");
+                        endingCount++;
+                    }
+
+
+                }
+
+                /*
+                if (!Plugin.AllEndings.Value && currentScene.Contains("ending") && gameStarted)
+                {
+                    
+
                     AttemptSendCommand("split");
                     gameStarted = false;
+                    
                 }
+                */
             }
 
             // Loading Logic
@@ -229,6 +264,10 @@ namespace SpeedRave
             gotPyramid = false;
             gotKey = false;
             gotDuck = false;
+            plagueEnding = false;
+            spaceEnding = false;
+            trueEnding = false;
+            endingCount = 0;
         }
 
         public void OnApplicationQuit()
