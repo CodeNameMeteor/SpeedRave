@@ -82,7 +82,7 @@ namespace SpeedRave
         public const int X = 20;
         public const int Y = 20;
         public const int WIDTH = 275;
-        public const int HEIGHT = 550;
+        public const int HEIGHT = 600;
         public static bool showGUI = false;
         public static bool sceneSelectorShowGUI = false;
 
@@ -153,12 +153,13 @@ namespace SpeedRave
                 }
             }
 
+            if (SafeGetKeyDown(Plugin.RestartBind.Value))
+            {
+                TriggerInstantRestart();
+            }
+
             if (Plugin.TrainerEnabled.Value)
             {
-                if (SafeGetKeyDown(Plugin.RestartBind.Value))
-                {
-                    TriggerInstantRestart();
-                }
 
                 if (SafeGetKeyDown(Plugin.StorePositionBind.Value))
                 {
@@ -349,14 +350,16 @@ namespace SpeedRave
             {
                 GUILayout.Label("<color=yellow>FPS Cap ignored while V-Sync is ON</color>");
             }
+            GUILayout.Label("<b>Run Controls</b>");
+            GUILayout.Space(10);
+            GUILayout.Label("Restart Run Bind:");
+            Plugin.RestartBind.Value = GUILayout.TextField(Plugin.RestartBind.Value);
 
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
-            GUILayout.Label("<b>Binds</b>");
-            GUILayout.Label("Restart Run Bind:");
-            Plugin.RestartBind.Value = GUILayout.TextField(Plugin.RestartBind.Value);
+            GUILayout.Label("<b>Trainer Binds</b>");
             GUILayout.Label("Add Cheese Bind:");
             Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
             GUILayout.Label("Remove Cheese Bind:");
@@ -518,6 +521,18 @@ namespace SpeedRave
                 Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
             }
             
+            // Run Controls
+            GUILayout.Label("<b>Run Controls</b>");
+            GUILayout.BeginHorizontal();
+            string restartBindDisplay = string.IsNullOrEmpty(Plugin.RestartBind.Value) ? "UNBOUND" : Plugin.RestartBind.Value.ToUpper();
+            if (GUILayout.Button($"Instant Restart ({restartBindDisplay})"))
+            {
+                TriggerInstantRestart();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+
             if (Plugin.TrainerEnabled.Value)
             {
                 // Room Selector
@@ -541,16 +556,6 @@ namespace SpeedRave
 
                 // Trainer
                 GUILayout.Label("<b>Trainer</b>");
-
-                // Instant Restart
-                GUILayout.BeginHorizontal();
-                //GUI.color = new Color(1f, 0.65f, 0.2f);
-                if (GUILayout.Button($"Instant Restart ({Plugin.RestartBind.Value.ToUpper()})"))
-                {
-                    TriggerInstantRestart();
-                }
-                GUI.color = Color.white;
-                GUILayout.EndHorizontal();
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
