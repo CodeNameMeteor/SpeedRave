@@ -1,37 +1,29 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using System.Reflection;
 using System;
-using System.IO; 
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace SpeedRave
 {
     public class InventoryOverlay : MonoBehaviour
     {
-        // Settings
-        //public static bool showInventory = Plugin.InventoryOverlayEnabled.Value;
-        //public static bool useIcons = Plugin.UseIcons.Value;
-        //public static bool verticalIcons = Plugin.VerticalIcons.Value;
-
-        //public static float iconSize = Plugin.IconSize.Value;
-        //public static float padding = Plugin.Padding.Value;
-        //public static float textHeight = Plugin.TextHeight.Value;
         public static float rowHeight = 55;
 
         // Flags
         private bool fontFound = false;
-        private bool texturesResolved = false;
+        private float lastFontSearchTime = -10f;
+        private const float FontSearchCooldown = 5f;
 
-        // References to objects I should figure out a cleaner way to do this
+        // References
         private GameObject inventoryGO;
         private FoodControl foodControl;
 
         // Textures
         private Texture2D cheeseTexture; 
         private Texture2D fruitTexture;
-
-        // Path to textures
         private string texturePath;
 
         // Data Structures
@@ -39,19 +31,21 @@ namespace SpeedRave
         {
             public string boolFieldName;
             public string objectFieldName;
+            public FieldInfo boolField;
+            public FieldInfo objectField;
 
             public Texture texture;
             public Rect uvRect;
-
             public bool isCollected;
         }
 
-        private List<ItemDef> allItems = new List<ItemDef>();
-        private List<Texture> displayList = new List<Texture>();
-        private List<Rect> displayUVs = new List<Rect>();
+        private readonly List<ItemDef> allItems = new List<ItemDef>();
+        private readonly List<Texture> displayList = new List<Texture>();
+        private readonly List<Rect> displayUVs = new List<Rect>();
 
         // Styles
         private GUIStyle textStyle;
+        private GUIStyle shadowStyle;
         private bool initialized = false;
 
         private void Awake()
@@ -62,54 +56,75 @@ namespace SpeedRave
             textStyle.alignment = TextAnchor.MiddleLeft;
             textStyle.richText = true;
 
+            shadowStyle = new GUIStyle();
+            shadowStyle.normal.textColor = Color.black;
+            shadowStyle.fontSize = (int)Plugin.TextHeight.Value;
+            shadowStyle.alignment = TextAnchor.MiddleLeft;
+            shadowStyle.richText = true;
 
-            // Texture path: Sewer Rave/BepInEx/CustomTextures
             texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "CustomTextures");
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            if (cheeseTexture != null) Destroy(cheeseTexture);
+            if (fruitTexture != null) Destroy(fruitTexture);
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            initialized = false;
+            inventoryGO = null;
+            foodControl = null;
         }
 
         private void Start()
         {
+            AddItemDef("haveKey", "key");
+            AddItemDef("hasDuck", "ducky");
+            AddItemDef("hasPizza", "pizza");
+            AddItemDef("hasMug", "mug");
+            AddItemDef("hasPyramid", "pyramid");
+            AddItemDef("hasBottlecap", "bottlecap");
 
-            allItems.Add(new ItemDef { boolFieldName = "haveKey", objectFieldName = "key" });
-            allItems.Add(new ItemDef { boolFieldName = "hasDuck", objectFieldName = "ducky" });
-            allItems.Add(new ItemDef { boolFieldName = "hasPizza", objectFieldName = "pizza" });
-            allItems.Add(new ItemDef { boolFieldName = "hasMug", objectFieldName = "mug" });
-            allItems.Add(new ItemDef { boolFieldName = "hasPyramid", objectFieldName = "pyramid" });
-            allItems.Add(new ItemDef { boolFieldName = "hasBottlecap", objectFieldName = "bottlecap" });
+            AttemptFindFont();
+        }
+
+        private void AddItemDef(string boolField, string objField)
+        {
+            allItems.Add(new ItemDef
+            {
+                boolFieldName = boolField,
+                objectFieldName = objField,
+                boolField = typeof(FoodControl).GetField(boolField),
+                objectField = typeof(FoodControl).GetField(objField)
+            });
         }
 
         private void Update()
         {
-            //if (!fontFound) AttemptFindFont();
-
-            // Try to initialize references
             if (!initialized || inventoryGO == null)
             {
                 AttemptInit();
             }
 
-            // Retry loading local textures if they failed initially (optional fallback)
-            /*
-            if (useIcons && !texturesResolved)
+            if (initialized)
             {
-                LoadLocalTextures();
+                CheckInventoryState();
+
+                if (!fontFound && Time.unscaledTime - lastFontSearchTime > FontSearchCooldown)
+                {
+                    AttemptFindFont();
+                }
             }
-            */
-
-            if (initialized) CheckInventoryState();
-
-            if (initialized && !fontFound) AttemptFindFont();
         }
 
         private void LoadLocalTextures()
         {
             if (cheeseTexture == null) cheeseTexture = LoadTextureFromFile("cheese.png");
             if (fruitTexture == null) fruitTexture = LoadTextureFromFile("fruit.png");
-
-            if (cheeseTexture != null && fruitTexture != null)
-            {
-                texturesResolved = true;
-            }
         }
 
         private Texture2D LoadTextureFromFile(string filename)
@@ -121,13 +136,14 @@ namespace SpeedRave
                 try
                 {
                     byte[] fileData = File.ReadAllBytes(fullPath);
-                    Texture2D tex = new Texture2D(2, 2); // Size doesn't matter, LoadImage replaces it
+                    Texture2D tex = new Texture2D(2, 2);
                     if (tex.LoadImage(fileData))
                     {
                         tex.name = filename;
-                        tex.filterMode = FilterMode.Bilinear; // Makes scaling smoother
+                        tex.filterMode = FilterMode.Bilinear;
                         return tex;
                     }
+                    Destroy(tex);
                 }
                 catch (Exception e)
                 {
@@ -139,6 +155,7 @@ namespace SpeedRave
 
         private void AttemptFindFont()
         {
+            lastFontSearchTime = Time.unscaledTime;
             Font[] allFonts = Resources.FindObjectsOfTypeAll<Font>();
 
             foreach (Font font in allFonts)
@@ -148,11 +165,11 @@ namespace SpeedRave
                 if (fName.Contains("autumn") || fName.Contains("larua"))
                 {
                     textStyle.font = font;
+                    shadowStyle.font = font;
                     fontFound = true;
                     break;
                 }
             }
-            
         }
 
         private void AttemptInit()
@@ -163,18 +180,16 @@ namespace SpeedRave
             {
                 foodControl = ReferenceManager.ActiveFoodControl;
 
-                // Attempt to load local textures immediately
                 LoadLocalTextures();
 
-                // Find Item Textures 
+                // Find Item Textures using cached FieldInfo
                 foreach (var item in allItems)
                 {
                     if (item.texture != null) continue;
 
-                    FieldInfo objField = typeof(FoodControl).GetField(item.objectFieldName);
-                    if (objField != null)
+                    if (item.objectField != null)
                     {
-                        GameObject itemGO = objField.GetValue(foodControl) as GameObject;
+                        GameObject itemGO = item.objectField.GetValue(foodControl) as GameObject;
                         if (itemGO != null)
                         {
                             ExtractTextureInfo(itemGO, item);
@@ -224,10 +239,9 @@ namespace SpeedRave
 
             foreach (var item in allItems)
             {
-                FieldInfo boolField = typeof(FoodControl).GetField(item.boolFieldName);
-                if (boolField != null)
+                if (item.boolField != null)
                 {
-                    bool hasItem = (bool)boolField.GetValue(foodControl);
+                    bool hasItem = (bool)item.boolField.GetValue(foodControl);
 
                     if (hasItem && !item.isCollected)
                     {
@@ -254,16 +268,16 @@ namespace SpeedRave
                 }
             }
         }
+
         private void OnGUI()
         {
-            if (!Plugin.InventoryOverlayEnabled.Value|| !initialized || foodControl == null || foodControl.display || textStyle == null) return;
+            if (!Plugin.InventoryOverlayEnabled.Value || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
+            int targetFontSize = (int)Plugin.TextHeight.Value;
+            textStyle.fontSize = targetFontSize;
+            shadowStyle.fontSize = targetFontSize;
 
-            textStyle.fontSize = (int)Plugin.TextHeight.Value;
-            float startX = 10f; // Added a small margin from the left edge
-
-
-            // We subtract iconSize to ensure the bottom-most icon stays on screen
+            float startX = 10f;
             float currentY = Screen.height - Plugin.IconSize.Value;
 
             bool canShowLogos = Plugin.UseIcons.Value && cheeseTexture != null && fruitTexture != null;
@@ -300,12 +314,10 @@ namespace SpeedRave
 
                     if (Plugin.VerticalIcons.Value)
                     {
-                        // Stack upwards
                         currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
                     }
                     else
                     {
-                        // Grid rightwards
                         itemX += (Plugin.IconSize.Value + Plugin.Padding.Value);
                     }
                 }
@@ -336,11 +348,7 @@ namespace SpeedRave
 
         private void DrawTextWithShadow(float x, float y, string content)
         {
-            if (textStyle == null) return;
-
-            GUIStyle shadowStyle = new GUIStyle(textStyle);
-            shadowStyle.normal.textColor = Color.black;
-            shadowStyle.font = textStyle.font;
+            if (textStyle == null || shadowStyle == null) return;
 
             GUI.Label(new Rect(x + 2, y + 2, 200, Plugin.TextHeight.Value), content, shadowStyle);
             GUI.Label(new Rect(x, y, 200, Plugin.TextHeight.Value), content, textStyle);

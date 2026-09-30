@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -7,17 +7,19 @@ namespace SpeedRave.Patches
 {
     static class SetSeedPatchs
     {
-        //public static bool Use;
         public static int Seed;
         public static int lastRandomSeed = 0;
         public static bool randomSeed = true;
 
         public static GameObject seedText;
         public static GameObject foodControlSeedText;
+        private static SuperTextMesh titleSeedSTM;
+        private static int lastDisplayedTitleSeed = int.MinValue;
+        private static bool lastDisplayedTitleSeedEnabled = false;
 
-
-        static Random.State state = Random.state;
-        static Random.State messyState = Random.state;
+        private static Random.State state = Random.state;
+        private static Random.State messyState = Random.state;
+        private static int stateDepth = 0;
 
         [HarmonyPatch(typeof(AppearChance), "Start")]
         [HarmonyPatch(typeof(Billboard_Random), "Start")]
@@ -34,8 +36,12 @@ namespace SpeedRave.Patches
         {
             if (Plugin.SeedEnabled.Value)
             {
-                messyState = Random.state;
-                Random.state = state;
+                if (stateDepth == 0)
+                {
+                    messyState = Random.state;
+                    Random.state = state;
+                }
+                stateDepth++;
             }
         }
 
@@ -54,8 +60,13 @@ namespace SpeedRave.Patches
         {
             if (Plugin.SeedEnabled.Value)
             {
-                state = Random.state;
-                Random.state = messyState;
+                stateDepth--;
+                if (stateDepth <= 0)
+                {
+                    stateDepth = 0;
+                    state = Random.state;
+                    Random.state = messyState;
+                }
             }
         }
 
@@ -67,14 +78,12 @@ namespace SpeedRave.Patches
             {
                 if (randomSeed)
                 {
-                    
-                    uint[] state = new uint[4];
-                    Seed = (int)DateTime.Now.Ticks;
+                    int newSeed = (int)DateTime.Now.Ticks;
                     for (int i = 0; i < 4; ++i)
                     {
-                        state[i] =  (uint) Seed;
-                        Seed = Seed * 0x6C078965 + 1;
+                        newSeed = newSeed * 0x6C078965 + 1;
                     }
+                    Seed = newSeed;
                     Debug.Log($"[SpeedRave] Seed set to {Seed}");
                     lastRandomSeed = Seed;
                     
@@ -89,78 +98,97 @@ namespace SpeedRave.Patches
                     RestoreState();
                 }
             }
-
         }
+
         [HarmonyPatch(typeof(FoodControl), "Start")]
         [HarmonyPostfix]
         public static void addSeedText(FoodControl __instance)
         {
-            if (Plugin.SeedEnabled.Value)
+            if (Plugin.SeedEnabled.Value && __instance != null && __instance.inventoryText != null)
             {
                 foodControlSeedText = GameObject.Instantiate(__instance.inventoryText.gameObject, __instance.inventoryText.transform);
                 foodControlSeedText.name = "seedText";
                 SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
-                seedSTM.text = "Seed: " + Seed;
-                seedSTM.transform.localPosition = new Vector3(
-                //seedSTM.transform.localPosition.x - 850f,
-                (seedSTM.transform.localPosition.x - Screen.width/2) + 100, 
-                seedSTM.transform.localPosition.y - seedSTM.transform.localPosition.y - Screen.height/2,
-                seedSTM.transform.localPosition.z
-                );
-                //seedSTM.transform.localPosition -= new Vector3(850f, 540f, 0f);
-                //seedSTM.transform.localPosition -= new Vector3(0f, seedSTM.transform.localPosition.y, 0f);
-                //seedSTM.transform.localPosition += new Vector3(0f, Screen.currentResolution.height-200, 0f);
-                //__instance.inventoryText.Text = "CHEESE: " + __instance.cheese.ToString() + "\nFRUIT: " + __instance.fruit.ToString() + "\nSEED: " + Seed.ToString();
+                if (seedSTM != null)
+                {
+                    seedSTM.text = "Seed: " + Seed;
+                    seedSTM.transform.localPosition = new Vector3(
+                        (seedSTM.transform.localPosition.x - Screen.width / 2f) + 100f, 
+                        -Screen.height / 2f,
+                        seedSTM.transform.localPosition.z
+                    );
+                }
             }
         }
+
         [HarmonyPatch(typeof(FoodControl), "RefreshValues")]
         [HarmonyPostfix]
         public static void UpdateSeedText(FoodControl __instance)
         {
             if (Plugin.SeedEnabled.Value && foodControlSeedText != null)
             {
-
                 SuperTextMesh seedSTM = foodControlSeedText.GetComponent<SuperTextMesh>();
-                seedSTM.text = "Seed: " + Seed;
-            }
-        }
-        [HarmonyPatch(typeof(TitleScreenControler), "Update")]
-        [HarmonyPostfix]
-        public static void ModifyTitleButtons(TitleScreenControler __instance)
-        {
-            if (seedText == null) return;
-
-            seedText.SetActive(Plugin.SeedEnabled.Value);
-
-            if (Plugin.SeedEnabled.Value)
-            {
-                SuperTextMesh seedSTM = seedText.GetComponent<SuperTextMesh>();
                 if (seedSTM != null)
                 {
                     seedSTM.text = "Seed: " + Seed;
                 }
             }
         }
-        [HarmonyPatch(typeof(TitleScreenControler), "Start")]
+
+        [HarmonyPatch(typeof(TitleScreenControler), "Update")]
         [HarmonyPostfix]
-        public static void ModifyTitleButtonPositon(TitleScreenControler __instance)
+        public static void ModifyTitleButtons(TitleScreenControler __instance)
         {
-            //ModifyButtonPosition(__instance.titleButtons, "ExitButton", new Vector3(-60.0f,0,0));
-            // Clone the original button GameObject
-            if(seedText == null )
+            if (seedText == null) return;
+
+            bool enabled = Plugin.SeedEnabled.Value;
+            if (enabled != lastDisplayedTitleSeedEnabled)
             {
-                Transform startButton = __instance.titleButtons.transform.Find("CreditsButton");
-
-                SuperTextMesh originalText = startButton.GetComponentInChildren<SuperTextMesh>();
-
-                seedText = GameObject.Instantiate(originalText.gameObject, startButton);
-                seedText.name = "SeedText";
-
-                //moving the text to a better position
-                seedText.transform.localPosition -= new Vector3(760f, 0f, 0f);
-                seedText.SetActive(Plugin.SeedEnabled.Value);
+                seedText.SetActive(enabled);
+                lastDisplayedTitleSeedEnabled = enabled;
             }
 
+            if (enabled && Seed != lastDisplayedTitleSeed)
+            {
+                if (titleSeedSTM == null)
+                {
+                    titleSeedSTM = seedText.GetComponent<SuperTextMesh>();
+                }
+                if (titleSeedSTM != null)
+                {
+                    titleSeedSTM.text = "Seed: " + Seed;
+                    lastDisplayedTitleSeed = Seed;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(TitleScreenControler), "Start")]
+        [HarmonyPostfix]
+        public static void ModifyTitleButtonPosition(TitleScreenControler __instance)
+        {
+            if (seedText == null && __instance != null && __instance.titleButtons != null)
+            {
+                Transform startButton = __instance.titleButtons.transform.Find("CreditsButton");
+                if (startButton != null)
+                {
+                    SuperTextMesh originalText = startButton.GetComponentInChildren<SuperTextMesh>();
+                    if (originalText != null)
+                    {
+                        seedText = GameObject.Instantiate(originalText.gameObject, startButton);
+                        seedText.name = "SeedText";
+                        titleSeedSTM = seedText.GetComponent<SuperTextMesh>();
+
+                        seedText.transform.localPosition -= new Vector3(760f, 0f, 0f);
+                        seedText.SetActive(Plugin.SeedEnabled.Value);
+                        if (titleSeedSTM != null)
+                        {
+                            titleSeedSTM.text = "Seed: " + Seed;
+                            lastDisplayedTitleSeed = Seed;
+                            lastDisplayedTitleSeedEnabled = Plugin.SeedEnabled.Value;
+                        }
+                    }
+                }
+            }
         }
     }
 }

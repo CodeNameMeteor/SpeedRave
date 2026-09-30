@@ -1,15 +1,8 @@
-﻿using BepInEx;
-using HarmonyLib;
+using BepInEx;
 using SpeedRave.Patches;
 using System;
-using System.Collections.Concurrent;
-using System.IO;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityStandardAssets.Characters.FirstPerson;
 
 namespace SpeedRave
 {
@@ -95,137 +88,115 @@ namespace SpeedRave
 
         private static bool configShowGUI = false;
         private Vector2 configScroll = Vector2.zero;
-
-
-        //private string DesiredScene = "";
-
-        private Scene currentScene;
+        private Vector2 sceneScroll = Vector2.zero;
 
         private int sceneIndex = 0;
 
-
         private const int MAIN_WINDOW_ID = 0;
         private const int SCENE_WINDOW_ID = 1;
+        private const int CONFIG_WINDOW_ID = 2;
 
-        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 300, 450);
+        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, 500);
         private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
         private static Rect sceneWinRect = new(
-            winRect.x + winRect.width + 10, // 10px padding to the right
+            winRect.x + winRect.width + 10,
             winRect.y,
             1100,
-            300
+            350
         );
 
-        //public static bool Use;
-
         public static bool locked = false;
-
-        public static string addCheeseBind = Plugin.AddCheeseBind.Value;
-        public static string removeCheeseBind = Plugin.RemoveCheeseBind.Value;
-        public static string addFruitBind = Plugin.AddFruitBind.Value;
-        public static string removeFruitBind = Plugin.RemoveFruitBind.Value;
-        public static string lockBind = Plugin.LockBind.Value;
-        public static string storePositionBind = Plugin.StorePositionBind.Value;
-        public static string restorePositionBind = Plugin.RestorePositionBind.Value;
-        public static string openTrainerBind = Plugin.OpenTrainerBind.Value;
-
-
-        //private Autosplitter autosplitter;
 
         private Vector3 storedPosition;
         private Quaternion storedCharacterRot;
         private Quaternion storedCameraRot;
-        private FieldInfo cameraField;
-        private FieldInfo mouseLookField;
-        private FieldInfo characterTargetRotField;
-        private FieldInfo cameraTargetRotField;
+        private bool hasStoredPosition = false;
 
         private string seedInput = "";
         private int parsedSeed = 0;
-
         private string fpsInput = "-1";
+        private float saveFeedbackTime = 0f;
+        private bool saveSuccess = false;
 
+        private static bool SafeGetKeyDown(string bind)
+        {
+            if (string.IsNullOrWhiteSpace(bind)) return false;
+            try
+            {
+                return Input.GetKeyDown(bind.Trim().ToLower());
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         private void Update()
         {
-
-                if (Input.GetKeyDown(openTrainerBind.ToLower()))
+            if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value))
+            {
+                showGUI = !showGUI;
+                if (sceneSelectorShowGUI)
                 {
-                    showGUI = !showGUI;
-                    if (sceneSelectorShowGUI)
-                    {
-                        sceneSelectorShowGUI = false;
-                    }
-                    if(configShowGUI)
-                    {
-                        configShowGUI = false;
-                    }
+                    sceneSelectorShowGUI = false;
                 }
+                if (configShowGUI)
+                {
+                    configShowGUI = false;
+                }
+            }
+
             if (Plugin.TrainerEnabled.Value)
             {
-                if (Input.GetKeyDown(storePositionBind.ToLower()))
+                if (SafeGetKeyDown(Plugin.StorePositionBind.Value))
                 {
                     StorePlayerPosition();
                 }
 
-                if (Input.GetKeyDown(restorePositionBind.ToLower()))
+                if (SafeGetKeyDown(Plugin.RestorePositionBind.Value))
                 {
                     RestorePlayerPosition();
                 }
 
-                if (Input.GetKeyDown(Plugin.IncrementSceneBind.Value.ToLower()))
+                if (SafeGetKeyDown(Plugin.IncrementSceneBind.Value))
                 {
                     sceneIndex = GetCurrentSceneIndex();
                     sceneIndex = (sceneIndex + 1) % Scenes.Length;
                     SceneManager.LoadScene(Scenes[sceneIndex]);
                 }
-                if (Input.GetKeyDown(Plugin.DecrementSceneBind.Value.ToLower()))
+                if (SafeGetKeyDown(Plugin.DecrementSceneBind.Value))
                 {
                     sceneIndex = GetCurrentSceneIndex();
                     sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
                     SceneManager.LoadScene(Scenes[sceneIndex]);
                 }
-                if (Input.GetKeyDown(lockBind.ToLower()))
+                if (SafeGetKeyDown(Plugin.LockBind.Value))
                 {
                     ToggleSceneLock();
                 }
+
                 if (ReferenceManager.ActiveFoodControl != null)
                 {
-                    if (Input.GetKeyDown(addCheeseBind.ToLower()))
+                    if (SafeGetKeyDown(Plugin.AddCheeseBind.Value))
                     {
                         ModifyCheese(1);
                     }
-                    if (Input.GetKeyDown(removeCheeseBind.ToLower()))
+                    if (SafeGetKeyDown(Plugin.RemoveCheeseBind.Value))
                     {
                         ModifyCheese(-1);
                     }
-                    if (Input.GetKeyDown(addFruitBind.ToLower()))
+                    if (SafeGetKeyDown(Plugin.AddFruitBind.Value))
                     {
                         ModifyFruit(1);
                     }
-                    if (Input.GetKeyDown(removeFruitBind.ToLower()))
+                    if (SafeGetKeyDown(Plugin.RemoveFruitBind.Value))
                     {
                         ModifyFruit(-1);
                     }
                 }
-
             }
         }
 
-        private void Start()
-        {
-            if (Autosplitter.Instance != null && Plugin.AutosplitterEnabled.Value)
-            {
-                Autosplitter.Instance.ConnectToLiveSplit();
-            }
-            else
-            {
-                if (Plugin.Debug.Value)
-                {
-                    Debug.LogError("Autosplitter component not found");
-                }
-            }
-        }
         private void OnGUI()
         {
             if (showGUI)
@@ -235,29 +206,30 @@ namespace SpeedRave
                 if (sceneSelectorShowGUI)
                 {
                     sceneWinRect.x = winRect.x;
-                    sceneWinRect.y = winRect.y + winRect.height + 10; // 10px gap below
+                    sceneWinRect.y = winRect.y + winRect.height + 10;
                     sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
                 }
 
                 if (configShowGUI)
                 {
-                    configWinRect.x = winRect.x + winRect.width + 10; // 10px gap to the right
+                    configWinRect.x = winRect.x + winRect.width + 10;
                     configWinRect.y = winRect.y;
-                    configWinRect = GUI.Window(2, configWinRect, ConfigWinProc, "SpeedRave Config");
+                    configWinRect = GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config");
                 }
             }
         }
+
         private void ConfigWinProc(int id)
         {
             configScroll = GUILayout.BeginScrollView(configScroll);
-            GUILayout.Label("<b>Patches</b>");
-            Plugin.QuickStart.Value = GUILayout.Toggle(Plugin.QuickStart.Value, " Quick Start");
-            Plugin.QuitToMenu.Value = GUILayout.Toggle(Plugin.QuitToMenu.Value, " Quit to Menu");
-            Plugin.RemoveMusic.Value = GUILayout.Toggle(Plugin.RemoveMusic.Value, " Remove Music");
 
+            GUILayout.Label("<b>Patches</b>");
+            Plugin.QuickStart.Value = GUILayout.Toggle(Plugin.QuickStart.Value, " Quick Start (Space to Start)");
+            Plugin.QuitToMenu.Value = GUILayout.Toggle(Plugin.QuitToMenu.Value, " Quit to Menu (Cancel Key)");
+            Plugin.ClearSaveOnStart.Value = GUILayout.Toggle(Plugin.ClearSaveOnStart.Value, " Clear Save on New Game (Speedruns)");
+            Plugin.RemoveMusic.Value = GUILayout.Toggle(Plugin.RemoveMusic.Value, " Remove Looping Music");
 
             GUILayout.Label("<b>Autosplitter</b>");
-
             Plugin.AutosplitterEnabled.Value = GUILayout.Toggle(Plugin.AutosplitterEnabled.Value, " Enable Autosplitter");
             Plugin.TwentyResourceSplit.Value = GUILayout.Toggle(Plugin.TwentyResourceSplit.Value, " Split on 20 Resources");
             Plugin.KeySplit.Value = GUILayout.Toggle(Plugin.KeySplit.Value, " Split on Key");
@@ -267,41 +239,31 @@ namespace SpeedRave
             GUILayout.Space(10);
 
             GUILayout.Label("<b>Seed Control</b>");
-
             Plugin.SeedEnabled.Value = GUILayout.Toggle(Plugin.SeedEnabled.Value, " Enable Seeding");
 
             GUILayout.Label("<b>Inventory Overlay</b>");
-
-            // Boolean Toggle
             Plugin.InventoryOverlayEnabled.Value = GUILayout.Toggle(Plugin.InventoryOverlayEnabled.Value, " Enable Inventory Overlay");
             Plugin.UseIcons.Value = GUILayout.Toggle(Plugin.UseIcons.Value, " Use Icons");
             Plugin.VerticalIcons.Value = GUILayout.Toggle(Plugin.VerticalIcons.Value, " Vertical Item Icons");
 
-            // Float Slider for Icon Size
             GUILayout.Label($"Icon Size: {Plugin.IconSize.Value:F0}");
             Plugin.IconSize.Value = GUILayout.HorizontalSlider(Plugin.IconSize.Value, 20f, 150f);
 
-            // Float Slider for Text Height
             GUILayout.Label($"Text Size: {Plugin.TextHeight.Value:F0}");
             Plugin.TextHeight.Value = GUILayout.HorizontalSlider(Plugin.TextHeight.Value, 20f, 150f);
 
-            // Float Slider for Logo Padding
             GUILayout.Label($"Item Padding: {Plugin.Padding.Value:F0}");
             Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
 
             GUILayout.Label("<b>Performance</b>");
-
-            // V-Sync Toggle
             bool currentVSync = Plugin.VSyncEnabled.Value;
             Plugin.VSyncEnabled.Value = GUILayout.Toggle(Plugin.VSyncEnabled.Value, " Enable V-Sync");
 
             if (currentVSync != Plugin.VSyncEnabled.Value)
             {
-                // 0 = Don't Sync, 1 = Every V-Blank, 2 = Every Second V-Blank
                 QualitySettings.vSyncCount = Plugin.VSyncEnabled.Value ? 1 : 0;
             }
 
-            // Only show/allow FPS changes if V-Sync is OFF
             if (!Plugin.VSyncEnabled.Value)
             {
                 GUILayout.BeginHorizontal();
@@ -322,51 +284,79 @@ namespace SpeedRave
             {
                 GUILayout.Label("<color=yellow>FPS Cap ignored while V-Sync is ON</color>");
             }
+
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
-
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
-            GUILayout.Label("<b>Binds (Press Enter to apply)</b>");
-            GUILayout.Label("<b>Add Cheese Bind</b>");
+            GUILayout.Label("<b>Binds</b>");
+            GUILayout.Label("Add Cheese Bind:");
             Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
-            GUILayout.Label("<b>Remove Cheese Bind</b>");
+            GUILayout.Label("Remove Cheese Bind:");
             Plugin.RemoveCheeseBind.Value = GUILayout.TextField(Plugin.RemoveCheeseBind.Value);
-            GUILayout.Label("<b>Add Fruit Bind</b>");
+            GUILayout.Label("Add Fruit Bind:");
             Plugin.AddFruitBind.Value = GUILayout.TextField(Plugin.AddFruitBind.Value);
-            GUILayout.Label("<b>Remove Fruit Bind</b>");
+            GUILayout.Label("Remove Fruit Bind:");
             Plugin.RemoveFruitBind.Value = GUILayout.TextField(Plugin.RemoveFruitBind.Value);
-            GUILayout.Label("<b>Lock Scene Bind</b>");
+            GUILayout.Label("Lock Scene Bind:");
             Plugin.LockBind.Value = GUILayout.TextField(Plugin.LockBind.Value);
-            GUILayout.Label("<b>Store Position Bind</b>");
+            GUILayout.Label("Store Position Bind:");
             Plugin.StorePositionBind.Value = GUILayout.TextField(Plugin.StorePositionBind.Value);
-            GUILayout.Label("<b>Restore Position Bind</b>");
+            GUILayout.Label("Restore Position Bind:");
             Plugin.RestorePositionBind.Value = GUILayout.TextField(Plugin.RestorePositionBind.Value);
-            GUILayout.Label("<b>Open Trainer Bind</b>");
+            GUILayout.Label("Open Trainer Bind:");
             Plugin.OpenTrainerBind.Value = GUILayout.TextField(Plugin.OpenTrainerBind.Value);
-            GUILayout.Label("<b>Increment Scene Bind</b>");
+            GUILayout.Label("Increment Scene Bind:");
             Plugin.IncrementSceneBind.Value = GUILayout.TextField(Plugin.IncrementSceneBind.Value);
-            GUILayout.Label("<b>Decrement Scene Bind</b>");
+            GUILayout.Label("Decrement Scene Bind:");
             Plugin.DecrementSceneBind.Value = GUILayout.TextField(Plugin.DecrementSceneBind.Value);
 
+            GUILayout.Space(15);
+            bool isSavedRecently = Time.unscaledTime < saveFeedbackTime;
 
-
-            // Save
-            /*
-            GUILayout.Space(20);
-            GUI.color = Color.green;
-            if (GUILayout.Button("SAVE TO CONFIG"))
+            if (isSavedRecently)
             {
-                Plugin.SaveConfig();
+                if (saveSuccess)
+                {
+                    GUI.color = new Color(0.2f, 1f, 0.6f);
+                    if (GUILayout.Button("✓ CONFIG SAVED!"))
+                    {
+                        saveSuccess = Plugin.SaveConfig();
+                        saveFeedbackTime = Time.unscaledTime + 2.5f;
+                    }
+                    GUI.color = Color.white;
+                    GUILayout.Label("<color=#55FF55><b>✓ Saved to SpeedRave.cfg!</b></color>");
+                }
+                else
+                {
+                    GUI.color = Color.red;
+                    if (GUILayout.Button("✗ SAVE FAILED!"))
+                    {
+                        saveSuccess = Plugin.SaveConfig();
+                        saveFeedbackTime = Time.unscaledTime + 2.5f;
+                    }
+                    GUI.color = Color.white;
+                    GUILayout.Label("<color=red><b>✗ Error writing config (check console)</b></color>");
+                }
             }
-            GUI.color = Color.white;
-            */
+            else
+            {
+                GUI.color = Color.green;
+                if (GUILayout.Button("SAVE TO CONFIG"))
+                {
+                    saveSuccess = Plugin.SaveConfig();
+                    saveFeedbackTime = Time.unscaledTime + 2.5f;
+                }
+                GUI.color = Color.white;
+            }
+
             GUILayout.EndScrollView();
             GUI.DragWindow();
         }
 
         private void SceneWinProc(int id)
         {
+            sceneScroll = GUILayout.BeginScrollView(sceneScroll);
             GUILayout.Label("Select a Scene:");
 
             selectedScene = GUILayout.SelectionGrid(selectedScene, Scenes, 10);
@@ -376,28 +366,32 @@ namespace SpeedRave
                 SceneManager.LoadScene(Scenes[selectedScene]);
             }
 
+            GUILayout.EndScrollView();
             GUI.DragWindow();
         }
 
         private void WinProc(int id)
         {
-            //GUILayout.Label($"Current Framerate: {1f / Time.unscaledDeltaTime:F2} FPS");
             if (Plugin.AutosplitterEnabled.Value)
             {
-                // Autosplitter 
                 GUILayout.Label("<b>Autosplitter</b>");
-                GUILayout.Label($"Connected: {Autosplitter.Instance.IsConnectedToLivesplit}");
-                if (!Autosplitter.Instance.IsConnectedToLivesplit)
+                bool isConnected = Autosplitter.Instance != null && Autosplitter.Instance.IsConnectedToLivesplit;
+                GUILayout.Label($"Connected: {isConnected}");
+                if (!isConnected)
                 {
                     if (GUILayout.Button("Connect to LiveSplit"))
-                        Autosplitter.Instance.ConnectToLiveSplit();
+                    {
+                        if (Autosplitter.Instance != null)
+                        {
+                            Autosplitter.Instance.ConnectToLiveSplit();
+                        }
+                    }
                 }
-
                 GUILayout.Space(5);
             }
 
             // Seed Control
-            if(Plugin.SeedEnabled.Value)
+            if (Plugin.SeedEnabled.Value)
             {
                 GUILayout.Label("<b>Seed Control</b>");
                 GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
@@ -425,7 +419,7 @@ namespace SpeedRave
                 Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
             }
             
-            if(Plugin.TrainerEnabled.Value)
+            if (Plugin.TrainerEnabled.Value)
             {
                 // Room Selector
                 GUILayout.Label("<b>Scene Selector</b>");
@@ -441,36 +435,34 @@ namespace SpeedRave
                 GUILayout.Label("<b>Room Lock</b>");
                 string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
                 GUILayout.Label($"Status: {lockStatus}");
-                if (GUILayout.Button(locked ? "Unlock (L)" : "Lock (L)"))
+                if (GUILayout.Button(locked ? $"Unlock ({Plugin.LockBind.Value.ToUpper()})" : $"Lock ({Plugin.LockBind.Value.ToUpper()})"))
                 {
-                    locked = !locked;
-                    if (locked) Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
+                    ToggleSceneLock();
                 }
 
                 // Trainer
-                GUILayout.Label("<b>Trainer </b>");
+                GUILayout.Label("<b>Trainer</b>");
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Cheese ({addCheeseBind.ToUpper()})")) ModifyCheese(1);
-                if (GUILayout.Button($"Sub Cheese ({removeCheeseBind.ToUpper()})")) ModifyCheese(-1);
+                if (GUILayout.Button($"Add Cheese ({Plugin.AddCheeseBind.Value.ToUpper()})")) ModifyCheese(1);
+                if (GUILayout.Button($"Sub Cheese ({Plugin.RemoveCheeseBind.Value.ToUpper()})")) ModifyCheese(-1);
                 GUILayout.EndHorizontal();
 
                 // Fruit Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Fruit ({addFruitBind.ToUpper()})")) ModifyFruit(1);
-                if (GUILayout.Button($"Sub Fruit ({removeFruitBind.ToUpper()})")) ModifyFruit(-1);
+                if (GUILayout.Button($"Add Fruit ({Plugin.AddFruitBind.Value.ToUpper()})")) ModifyFruit(1);
+                if (GUILayout.Button($"Sub Fruit ({Plugin.RemoveFruitBind.Value.ToUpper()})")) ModifyFruit(-1);
                 GUILayout.EndHorizontal();
 
                 // Position Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Store Pos ({storePositionBind.ToUpper()})")) StorePlayerPosition();
-                if (GUILayout.Button($"Restore Pos ({restorePositionBind.ToUpper()})")) RestorePlayerPosition();
+                if (GUILayout.Button($"Store Pos ({Plugin.StorePositionBind.Value.ToUpper()})")) StorePlayerPosition();
+                if (GUILayout.Button($"Restore Pos ({Plugin.RestorePositionBind.Value.ToUpper()})")) RestorePlayerPosition();
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(5);
             }
-            
             
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
@@ -494,6 +486,7 @@ namespace SpeedRave
                 locked = false;
             }
         }
+
         private void ModifyFruit(int amount)
         {
             if (ReferenceManager.ActiveFoodControl != null)
@@ -501,6 +494,7 @@ namespace SpeedRave
                 ReferenceManager.ActiveFoodControl.fruit += amount;
             }
         }
+
         private void ModifyCheese(int amount)
         {
             if (ReferenceManager.ActiveFoodControl != null)
@@ -508,15 +502,16 @@ namespace SpeedRave
                 ReferenceManager.ActiveFoodControl.cheese += amount;
             }
         }
+
         private void StorePlayerPosition()
         {
             if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
             {
                 storedPosition = ReferenceManager.PlayerController.transform.position;
 
-                object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
+                object mouseLookObj = ReferenceManager.MouseLookField?.GetValue(ReferenceManager.PlayerController);
 
-                if (mouseLookObj != null)
+                if (mouseLookObj != null && ReferenceManager.CharacterTargetRotField != null && ReferenceManager.CameraTargetRotField != null)
                 {
                     object charRotObj = ReferenceManager.CharacterTargetRotField.GetValue(mouseLookObj);
                     object camRotObj = ReferenceManager.CameraTargetRotField.GetValue(mouseLookObj);
@@ -525,17 +520,21 @@ namespace SpeedRave
                     {
                         storedCharacterRot = charRot;
                         storedCameraRot = camRot;
+                        hasStoredPosition = true;
                     }
                 }
             }
         }
+
         private void RestorePlayerPosition()
         {
+            if (!hasStoredPosition) return;
+
             if (ReferenceManager.Player != null && ReferenceManager.PlayerController != null)
             {
                 ReferenceManager.PlayerController.transform.position = storedPosition;
-                object mouseLookObj = ReferenceManager.MouseLookField.GetValue(ReferenceManager.PlayerController);
-                if (mouseLookObj != null)
+                object mouseLookObj = ReferenceManager.MouseLookField?.GetValue(ReferenceManager.PlayerController);
+                if (mouseLookObj != null && ReferenceManager.CharacterTargetRotField != null && ReferenceManager.CameraTargetRotField != null)
                 {
                     ReferenceManager.CharacterTargetRotField.SetValue(mouseLookObj, storedCharacterRot);
                     ReferenceManager.CameraTargetRotField.SetValue(mouseLookObj, storedCameraRot);
@@ -548,16 +547,17 @@ namespace SpeedRave
                 }
             }
         }
+
         private int GetCurrentSceneIndex()
         {
+            string activeScene = SceneManager.GetActiveScene().name;
             for (int i = 0; i < Scenes.Length; i++)
             {
-                if (Scenes[i].ToLower() == SceneManager.GetActiveScene().name.ToLower())
+                if (string.Equals(Scenes[i], activeScene, StringComparison.OrdinalIgnoreCase))
                 {
                     return i;
                 }
             }
-            Debug.Log(SceneManager.GetActiveScene().name);
             return 0;
         }
     }

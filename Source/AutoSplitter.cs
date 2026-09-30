@@ -1,8 +1,11 @@
-﻿using BepInEx;
+using BepInEx;
 using System;
+using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks; // Required for async
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -23,28 +26,24 @@ namespace SpeedRave
         public bool gotBottlecap = false;
         public bool gotDuck = false;
         public bool gotKey = false;
-        //public static bool Use = true; // Assumed true for logic
-
-        // Config flags
-        public static bool twentyResourceSplit;
-        public static bool keySplit;
-        public static bool twentyFruitSplit;
-        public static bool itemSplit;
 
         public static bool plagueEnding = false;
         public static bool spaceEnding = false;
         public static bool trueEnding = false;
 
-
-        // Networking stuff
+        // Networking
         public bool IsConnectedToLivesplit { get; private set; } = false;
-        private string IpAddress = "127.0.0.1"; 
-        private int Port = 16834;
-        private TcpClient Client = null;
-        private NetworkStream Stream = null;
-        private bool _isConnecting = false;
+        private readonly string ipAddress = "127.0.0.1"; 
+        private readonly int port = 16834;
+        private TcpClient client = null;
+        private NetworkStream stream = null;
+        private bool isConnecting = false;
+        private CancellationTokenSource netCts;
+        private readonly ConcurrentQueue<string> sendQueue = new ConcurrentQueue<string>();
+        private bool isSending = false;
 
         private bool timerPaused = false;
+        private string currentSceneName = "";
 
         // Singleton Instance
         public static Autosplitter Instance { get; private set; }
@@ -52,10 +51,24 @@ namespace SpeedRave
         public void Awake()
         {
             Instance = this;
+            currentSceneName = SceneManager.GetActiveScene().name;
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            Disconnect();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            currentSceneName = scene.name;
+        }
+
         public void Start()
         {
-            // Try to connect on startup, but do it silently in the background
+            // Try to connect on startup silently in the background
             if (Plugin.AutosplitterEnabled.Value)
             {
                 ConnectToLiveSplit();
@@ -64,81 +77,131 @@ namespace SpeedRave
 
         public async void ConnectToLiveSplit()
         {
-            if (_isConnecting || IsConnectedToLivesplit) return;
+            if (isConnecting || IsConnectedToLivesplit) return;
 
-            _isConnecting = true;
+            isConnecting = true;
             try
             {
-                // Run the blocking connection in a background thread
-                Client = new TcpClient();
-                await Client.ConnectAsync(IpAddress, Port);
+                Disconnect();
 
-                if (Client.Connected)
+                netCts = new CancellationTokenSource();
+                client = new TcpClient();
+                await client.ConnectAsync(ipAddress, port);
+
+                if (client.Connected)
                 {
-                    Stream = Client.GetStream();
-
-                    SendMessageSafe("getcurrenttimerphase");
-                    SendMessageSafe("initgametime");
-
+                    stream = client.GetStream();
                     IsConnectedToLivesplit = true;
-                    Debug.Log("SpeedRave: Connected to LiveSplit!");
+                    Debug.Log("[SpeedRave] Connected to LiveSplit!");
+
+                    // Start background reader to drain LiveSplit responses
+                    _ = Task.Run(() => ReadLoopAsync(stream, netCts.Token));
+
+                    AttemptSendCommand("getcurrenttimerphase");
+                    AttemptSendCommand("initgametime");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"SpeedRave: Could not connect to LiveSplit. {ex.Message}");
+                if (Plugin.Debug.Value)
+                {
+                    Debug.LogWarning($"[SpeedRave] Could not connect to LiveSplit: {ex.Message}");
+                }
                 Disconnect(); 
             }
             finally
             {
-                _isConnecting = false;
+                isConnecting = false;
             }
         }
 
-        private void Disconnect()
+        private async Task ReadLoopAsync(NetworkStream netStream, CancellationToken ct)
+        {
+            byte[] buffer = new byte[1024];
+            try
+            {
+                while (!ct.IsCancellationRequested && netStream != null && netStream.CanRead)
+                {
+                    int bytesRead = await netStream.ReadAsync(buffer, 0, buffer.Length, ct);
+                    if (bytesRead == 0) break; // Socket closed
+                }
+            }
+            catch
+            {
+                // Ignored - stream closed or canceled on disconnect
+            }
+        }
+
+        public void Disconnect()
         {
             IsConnectedToLivesplit = false;
 
             try
             {
-                Stream?.Close();
-                Stream?.Dispose();
+                netCts?.Cancel();
+                netCts?.Dispose();
             }
             catch { }
+            netCts = null;
 
             try
             {
-                Client?.Close();
-                Client?.Dispose();
+                stream?.Close();
+                stream?.Dispose();
             }
             catch { }
+            stream = null;
 
-            Stream = null;
-            Client = null;
+            try
+            {
+                client?.Close();
+                client?.Dispose();
+            }
+            catch { }
+            client = null;
+
+            // Clear send queue
+            while (sendQueue.TryDequeue(out _)) { }
+            isSending = false;
         }
 
         public void AttemptSendCommand(string command)
         {
-            if (!IsConnectedToLivesplit) return;
+            if (!IsConnectedToLivesplit || string.IsNullOrEmpty(command)) return;
 
-            SendMessageSafe(command);
+            sendQueue.Enqueue(command);
+            if (!isSending)
+            {
+                _ = ProcessSendQueueAsync();
+            }
         }
 
-        private void SendMessageSafe(string message)
+        private async Task ProcessSendQueueAsync()
         {
+            if (isSending) return;
+            isSending = true;
+
             try
             {
-                if (Client == null || !Client.Connected || Stream == null)
+                while (sendQueue.TryDequeue(out string message))
                 {
-                    throw new SocketException();
-                }
+                    if (stream == null || client == null || !client.Connected)
+                    {
+                        Disconnect();
+                        break;
+                    }
 
-                byte[] data = Encoding.UTF8.GetBytes(message + "\r\n");
-                Stream.Write(data, 0, data.Length);
+                    byte[] data = Encoding.UTF8.GetBytes(message + "\r\n");
+                    await stream.WriteAsync(data, 0, data.Length);
+                }
             }
             catch (Exception)
             {
                 Disconnect();
+            }
+            finally
+            {
+                isSending = false;
             }
         }
 
@@ -152,24 +215,21 @@ namespace SpeedRave
 
         public void UpdateAutosplitter()
         {
+            string currentScene = currentSceneName;
 
-            string currentScene = SceneManager.GetActiveScene().name;
-
-            //Reset Logic
+            // Reset Logic
             if (currentScene == "TitleScreen" && gameStarted)
-
             {
                 AttemptSendCommand("reset");
                 gameStarted = false;
             }
 
-            //Start Logic
+            // Start Logic
             if (currentScene == "Sewer_Start" && !gameStarted)
             {
                 AttemptSendCommand("unpausegametime");
                 AttemptSendCommand("reset");
                 AttemptSendCommand("starttimer");
-
 
                 ResetRunFlags();
                 gameStarted = true;
@@ -198,46 +258,37 @@ namespace SpeedRave
                     gotKey = true;
                 }
 
-                if (playerFood.hasBottlecap && !gotBottlecap && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotBottlecap = true; }
-                else if (playerFood.hasPyramid && !gotPyramid && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotPyramid = true; }
-                else if (playerFood.hasMug && !gotMug && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotMug = true; }
-                else if (playerFood.hasDuck && !gotDuck && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotDuck = true; }
-                else if (playerFood.hasPizza && !gotPizza && Plugin.ItemSplit.Value) { AttemptSendCommand("split"); gotPizza = true; }
-
-                if(gameStarted && currentScene.Contains("ending"))
+                if (Plugin.ItemSplit.Value)
                 {
-                    if (currentScene.ToLower() == "plaguending" && !plagueEnding)
+                    if (playerFood.hasBottlecap && !gotBottlecap) { AttemptSendCommand("split"); gotBottlecap = true; }
+                    if (playerFood.hasPyramid && !gotPyramid) { AttemptSendCommand("split"); gotPyramid = true; }
+                    if (playerFood.hasMug && !gotMug) { AttemptSendCommand("split"); gotMug = true; }
+                    if (playerFood.hasDuck && !gotDuck) { AttemptSendCommand("split"); gotDuck = true; }
+                    if (playerFood.hasPizza && !gotPizza) { AttemptSendCommand("split"); gotPizza = true; }
+                }
+
+                string sceneLower = currentScene.ToLower();
+                if (gameStarted && (sceneLower.Contains("ending") || sceneLower == "plaguending" || sceneLower == "truending"))
+                {
+                    if (sceneLower == "plaguending" && !plagueEnding)
                     {
                         plagueEnding = true;
                         AttemptSendCommand("split");
                         endingCount++;
                     }
-                    else if (currentScene.ToLower() == "spaceending" && !spaceEnding)
+                    else if (sceneLower == "spaceending" && !spaceEnding)
                     {
                         spaceEnding = true;
                         AttemptSendCommand("split");
                         endingCount++;
                     }
-                    else if (currentScene.ToLower() == "truending" && !trueEnding)
+                    else if (sceneLower == "truending" && !trueEnding)
                     {
                         trueEnding = true;
                         AttemptSendCommand("split");
                         endingCount++;
                     }
-
-
                 }
-
-                /*
-                if (!Plugin.AllEndings.Value && currentScene.Contains("ending") && gameStarted)
-                {
-                    
-
-                    AttemptSendCommand("split");
-                    gameStarted = false;
-                    
-                }
-                */
             }
 
             // Loading Logic
@@ -252,7 +303,6 @@ namespace SpeedRave
                 timerPaused = false;
             }
         }
-
 
         private void ResetRunFlags()
         {
@@ -274,7 +324,7 @@ namespace SpeedRave
         {
             if (IsConnectedToLivesplit)
             {
-                SendMessageSafe("pausegametime");
+                AttemptSendCommand("pausegametime");
                 Disconnect();
             }
         }

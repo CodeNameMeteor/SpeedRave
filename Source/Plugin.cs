@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -24,6 +24,7 @@ namespace SpeedRave
 
         // --- Config Entries ---
         public static ConfigEntry<bool> QuitToMenu;
+        public static ConfigEntry<bool> ClearSaveOnStart;
         public static ConfigEntry<bool> RemoveMusic;
         public static ConfigEntry<bool> QuickStart;
         public static ConfigEntry<bool> SeedEnabled;
@@ -65,48 +66,17 @@ namespace SpeedRave
 
 
 
-        public Plugin()
-        {
-            /*
-            QuitToMenuPatch.Use = Config.Bind("Patches", "Quit To Menu", true).Value;
-
-            RemoveMusicPatch.Use = Config.Bind("Patches", "Remove Music", false).Value;
-
-            QuickStartPatch.Use = Config.Bind("Patches", "QuickStart", true).Value;
-
-            SetSeedPatchs.Use = Config.Bind("Seeding", "Set Seed", true).Value;
-
-            GUIComponent.Use = Config.Bind("Trainer", "Enable Trainer", true).Value;
-
-            GUIComponent.addCheeseBind = Config.Bind("Binds", "Add Cheese Bind", "U").Value;
-            GUIComponent.removeCheeseBind = Config.Bind("Binds", "Remove Cheese Bind", "I").Value;
-            GUIComponent.addFruitBind = Config.Bind("Binds", "Add Fruit Bind", "O").Value;
-            GUIComponent.removeFruitBind = Config.Bind("Binds", "Remove Fruit Bind", "P").Value;
-            GUIComponent.lockBind = Config.Bind("Binds", "Scene Lock Bind", "L").Value;
-            GUIComponent.storePositionBind = Config.Bind("Binds", "Store Position Bind", "Z").Value;
-            GUIComponent.restorePositionBind = Config.Bind("Binds", "Restore Position Bind", "X").Value;
-            GUIComponent.openTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT").Value;
-
-
-            Autosplitter.Use = Config.Bind("AutoSplitter", "Autosplitter Enabled", true).Value;
-            Autosplitter.twentyResourceSplit = Config.Bind("AutoSplitter", "Twenty Resource Split", false).Value;
-            Autosplitter.twentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false).Value;
-            Autosplitter.keySplit = Config.Bind("AutoSplitter", "Key Split", false).Value;
-            Autosplitter.itemSplit = Config.Bind("AutoSplitter", "Item Split", false).Value;
-
-            InventoryOverlay.showInventory = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false).Value;
-            InventoryOverlay.useIcons = Config.Bind("Inventory Overlay", "Use Icons", true).Value;
-            InventoryOverlay.verticalIcons = Config.Bind("Inventory Overlay", "Vertical Icons", true).Value;
-            InventoryOverlay.textHeight = Config.Bind("Inventory Overlay", "Text Height", 45f).Value;
-            InventoryOverlay.iconSize = Config.Bind("Inventory Overlay", "Icon Size", 50f).Value;
-            InventoryOverlay.padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f).Value;
-            */
-        }
-
          void Awake()
          {
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
+
             // --- Binding Values ---
             QuitToMenu = Config.Bind("Patches", "Quit To Menu", true);
+            ClearSaveOnStart = Config.Bind("Patches", "Clear Save On Start", true);
             RemoveMusic = Config.Bind("Patches", "Remove Music", false);
             QuickStart = Config.Bind("Patches", "QuickStart", true);
 
@@ -152,11 +122,6 @@ namespace SpeedRave
             _mod.AddComponent<InventoryOverlay>();
             GameObject.DontDestroyOnLoad(_mod);
             ReferenceManager.Initialize();
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
 
             
             harmony.PatchAll(typeof(QuitToMenuPatch));
@@ -168,6 +133,22 @@ namespace SpeedRave
             harmony.PatchAll(typeof(SceneLock));
             harmony.PatchAll(typeof(CursorLockFix));
         }
-        public static void SaveConfig() => Instance.Config.Save();
+        public static bool SaveConfig()
+        {
+            try
+            {
+                Instance?.Config?.Save();
+                if (Plugin.Debug.Value)
+                {
+                    UnityEngine.Debug.Log("[SpeedRave] Configuration saved to disk.");
+                }
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[SpeedRave] Error saving config: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

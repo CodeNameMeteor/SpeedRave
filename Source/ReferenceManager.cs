@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -42,7 +42,7 @@ namespace SpeedRave
         {
             RefreshReferences();
 
-            if (scene.name.ToLower() != "titlescreen" && scene.name.ToLower() != "credits " && ActiveFoodControl == null)
+            if (scene.name.ToLower() != "titlescreen" && scene.name.ToLower() != "credits" && ActiveFoodControl == null)
             {
                 ActiveFoodControl = GameObject.FindObjectOfType<FoodControl>();
                 if (ActiveFoodControl == null)
@@ -76,6 +76,11 @@ namespace SpeedRave
                 PlayerController = Player.GetComponent<FirstPersonController>();
                 // Safely get camera via reflection or component
                 MainCamera = Player.GetComponentInChildren<Camera>();
+            }
+            else
+            {
+                PlayerController = null;
+                MainCamera = null;
             }
 
             ActiveInventory = GameObject.FindGameObjectWithTag("Inventory");

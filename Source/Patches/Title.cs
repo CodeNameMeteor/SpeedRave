@@ -1,31 +1,37 @@
-﻿using HarmonyLib;
+using HarmonyLib;
+using System.Reflection;
 
 namespace SpeedRave.Patches
 {
     static class TitlePatch
     {
-        //Modify's the default titleText to our new title text
+        private static readonly FieldInfo TitleTextField = AccessTools.Field(typeof(TitleColor), "titleText");
+
+        // Modifies the default titleText to our new title text
         [HarmonyPatch(typeof(TitleColor), "Start")]
         [HarmonyPostfix]
         static void TitleColorStartPatch(TitleColor __instance)
         {
-            var titleTextField = AccessTools.Field(typeof(TitleColor), "titleText");
-
-            var titleText = (SuperTextMesh)titleTextField.GetValue(__instance);
-
-            titleText.text = "SEWER RAVE+";
+            SetTitleText(__instance);
         }
 
-        //modifies the titleText which appears after clicking the title to change the colour.
+        // Modifies the titleText which appears after clicking the title to change the colour
         [HarmonyPatch(typeof(TitleColor), "ChangeColor")]
         [HarmonyPrefix]
         static void TitleColorChangeColorPatch(TitleColor __instance)
         {
-            var titleTextField = AccessTools.Field(typeof(TitleColor), "titleText");
+            SetTitleText(__instance);
+        }
 
-            var titleText = (SuperTextMesh)titleTextField.GetValue(__instance);
+        private static void SetTitleText(TitleColor instance)
+        {
+            if (instance == null || TitleTextField == null) return;
 
-            titleText.text = "SEWER RAVE+";
+            var titleText = TitleTextField.GetValue(instance) as SuperTextMesh;
+            if (titleText != null)
+            {
+                titleText.text = "SEWER RAVE+";
+            }
         }
     }
 }
