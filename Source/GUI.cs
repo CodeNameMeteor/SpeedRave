@@ -122,6 +122,7 @@ namespace SpeedRave
 
         private static float seedFlashTimer = 0f;
         private static string seedFlashText = "";
+        private static string seedFlashMode = "";
         private GUIStyle seedFlashStyle;
         private GUIStyle seedFlashShadowStyle;
 
@@ -270,10 +271,17 @@ namespace SpeedRave
             float x = 20f;
             float y = 20f;
             float w = 500f;
-            float h = 60f;
+            float h = 50f;
 
             GUI.Label(new Rect(x + 2, y + 2, w, h), seedFlashText, seedFlashShadowStyle);
             GUI.Label(new Rect(x, y, w, h), seedFlashText, seedFlashStyle);
+
+            if (!string.IsNullOrEmpty(seedFlashMode))
+            {
+                float modeY = y + 36f;
+                GUI.Label(new Rect(x + 2, modeY + 2, w, h), seedFlashMode, seedFlashShadowStyle);
+                GUI.Label(new Rect(x, modeY, w, h), seedFlashMode, seedFlashStyle);
+            }
         }
 
         private void ConfigWinProc(int id)
@@ -703,6 +711,7 @@ namespace SpeedRave
                     Patches.SetSeedPatchs.Init();
                 }
                 seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
+                seedFlashMode = Patches.SetSeedPatchs.randomSeed ? "Random Seed" : "Set Seed";
                 seedFlashTimer = Time.unscaledTime + 1.0f;
             }
 
