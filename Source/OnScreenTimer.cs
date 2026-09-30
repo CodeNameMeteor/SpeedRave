@@ -6,8 +6,10 @@ namespace SpeedRave
 {
     public class OnScreenTimer : MonoBehaviour
     {
-        public static float CurrentTime { get; private set; } = 0f;
+        private static readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+        public static float CurrentTime => (float)stopwatch.Elapsed.TotalSeconds;
         public static bool IsRunning { get; private set; } = false;
+        public static bool IsRunActive { get; private set; } = false;
         public static bool IsEnded { get; private set; } = false;
 
         private GUIStyle timerStyle;
@@ -42,39 +44,86 @@ namespace SpeedRave
             string sceneName = scene.name;
             string sceneLower = sceneName.ToLower();
 
-            if (sceneName == "Sewer_Start")
+            if (sceneName == "Sewer_Start" && mode == LoadSceneMode.Single)
             {
-                CurrentTime = 0f;
-                IsRunning = true;
-                IsEnded = false;
+                StartTimer();
             }
             else if (sceneName == "TitleScreen")
             {
-                IsRunning = false;
-                IsEnded = false;
-                CurrentTime = 0f;
+                ResetTimer();
             }
-            else if (sceneLower.Contains("ending") || sceneLower == "plaguending" || sceneLower == "truending")
+            else if (IsEndingScene(sceneLower))
             {
-                if (IsRunning)
-                {
-                    IsRunning = false;
-                    IsEnded = true;
-                }
+                StopTimer();
             }
+        }
+
+        public static bool IsEndingScene(string sceneLower)
+        {
+            return sceneLower.Contains("ending") ||
+                   sceneLower == "plaguending" ||
+                   sceneLower == "spaceending" ||
+                   sceneLower == "truending" ||
+                   sceneLower == "winroom1" ||
+                   sceneLower == "credits";
         }
 
         private void Update()
         {
-            if (IsRunning && !Autosplitter.isLoading)
+            // Resume when the first frame of gameplay actually executes in the new scene
+            if (IsRunActive && !IsEnded && Autosplitter.isLoading && Autosplitter.justLoadedScene)
             {
-                CurrentTime += Time.unscaledDeltaTime;
+                Autosplitter.justLoadedScene = false;
+                Autosplitter.isLoading = false;
+                ResumeTimer();
+                if (Autosplitter.Instance != null)
+                {
+                    Autosplitter.Instance.SendUnpauseGameTimeImmediate();
+                }
+            }
+        }
+
+        public static void StartTimer()
+        {
+            stopwatch.Restart();
+            IsRunActive = true;
+            IsRunning = true;
+            IsEnded = false;
+        }
+
+        public static void PauseTimer()
+        {
+            if (stopwatch.IsRunning)
+            {
+                stopwatch.Stop();
+            }
+            IsRunning = false;
+        }
+
+        public static void ResumeTimer()
+        {
+            if (IsRunActive && !IsEnded && !stopwatch.IsRunning)
+            {
+                stopwatch.Start();
+                IsRunning = true;
+            }
+        }
+
+        public static void StopTimer()
+        {
+            if (IsRunActive || IsRunning)
+            {
+                stopwatch.Stop();
+                IsRunActive = false;
+                IsRunning = false;
+                IsEnded = true;
             }
         }
 
         public static void ResetTimer()
         {
-            CurrentTime = 0f;
+            stopwatch.Reset();
+            IsRunActive = false;
             IsRunning = false;
             IsEnded = false;
         }
@@ -103,7 +152,7 @@ namespace SpeedRave
             if (!Plugin.ShowOnScreenTimer.Value) return;
 
             string currentScene = SceneManager.GetActiveScene().name;
-            if (currentScene == "TitleScreen" && !IsRunning && !IsEnded) return;
+            if (currentScene == "TitleScreen" && !IsRunActive && !IsEnded) return;
 
             int fontSize = Mathf.RoundToInt(Plugin.TimerFontSize.Value);
             timerStyle.fontSize = fontSize;
@@ -152,7 +201,7 @@ namespace SpeedRave
                 char c = formattedTime[i];
                 float slotWidth = (c == ':') ? cachedColonWidth : (c == '.') ? cachedDotWidth : cachedDigitWidth;
 
-                string charStr = c.ToString();
+                string charStr = GetCharString(c);
                 Rect shadowRect = new Rect(currentX + 2, y + 2, slotWidth, height);
                 Rect textRect = new Rect(currentX, y, slotWidth, height);
 
@@ -161,6 +210,20 @@ namespace SpeedRave
 
                 currentX += slotWidth;
             }
+        }
+
+        private static readonly string[] DigitStrings = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static readonly string ColonString = ":";
+        private static readonly string DotString = ".";
+        private static readonly string SpaceString = " ";
+
+        private static string GetCharString(char c)
+        {
+            if (c >= '0' && c <= '9') return DigitStrings[c - '0'];
+            if (c == ':') return ColonString;
+            if (c == '.') return DotString;
+            if (c == ' ') return SpaceString;
+            return c.ToString();
         }
 
         private string FormatTime(float seconds)

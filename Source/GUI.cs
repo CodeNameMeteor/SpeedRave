@@ -672,9 +672,9 @@ namespace SpeedRave
 
         public static void TriggerInstantRestart()
         {
-            if (Autosplitter.Instance != null && Autosplitter.Instance.IsConnectedToLivesplit)
+            if (Autosplitter.Instance != null)
             {
-                Autosplitter.Instance.AttemptSendCommand("reset");
+                Autosplitter.Instance.ResetRun();
             }
 
             if (Plugin.ClearSaveOnStart.Value)

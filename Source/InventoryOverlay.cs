@@ -10,8 +10,6 @@ namespace SpeedRave
 {
     public class InventoryOverlay : MonoBehaviour
     {
-        public static float rowHeight = 55;
-
         // Flags
         public static Font GameFont { get; private set; }
         private bool fontFound = false;

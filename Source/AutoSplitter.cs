@@ -16,7 +16,25 @@ namespace SpeedRave
         public bool debug = false;
         public bool gameStarted = false;
         public static bool isLoading = false;
+        public static bool justLoadedScene = false;
         public static int endingCount = 0;
+
+        public static void NotifyLoadingStarted()
+        {
+            if (isLoading) return;
+            isLoading = true;
+            justLoadedScene = false;
+            OnScreenTimer.PauseTimer();
+            if (Instance != null)
+            {
+                Instance.SendPauseGameTimeImmediate();
+            }
+        }
+
+        public static void NotifyLoadingFinished()
+        {
+            justLoadedScene = true;
+        }
 
         public bool gotResources = false;
         public bool gotFruit = false;
@@ -37,6 +55,9 @@ namespace SpeedRave
         private readonly int port = 16834;
         private TcpClient client = null;
         private NetworkStream stream = null;
+        private readonly object streamLock = new object();
+        private static readonly byte[] PauseGameTimeBytes = Encoding.UTF8.GetBytes("pausegametime\r\n");
+        private static readonly byte[] UnpauseGameTimeBytes = Encoding.UTF8.GetBytes("unpausegametime\r\n");
         private bool isConnecting = false;
         private CancellationTokenSource netCts;
         private readonly ConcurrentQueue<string> sendQueue = new ConcurrentQueue<string>();
@@ -64,6 +85,24 @@ namespace SpeedRave
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             currentSceneName = scene.name;
+            string sceneLower = scene.name.ToLower();
+
+            if (scene.name == "Sewer_Start" && mode == LoadSceneMode.Single)
+            {
+                StartRun();
+            }
+            else if (scene.name == "TitleScreen")
+            {
+                ResetRun();
+            }
+            else if (gameStarted && OnScreenTimer.IsEndingScene(sceneLower))
+            {
+                HandleEnding(sceneLower);
+            }
+            else
+            {
+                justLoadedScene = true;
+            }
         }
 
         public void Start()
@@ -98,7 +137,7 @@ namespace SpeedRave
                     _ = Task.Run(() => ReadLoopAsync(stream, netCts.Token));
 
                     AttemptSendCommand("getcurrenttimerphase");
-                    AttemptSendCommand("initgametime");
+                    AttemptSendCommand("setgametime 0");
                 }
             }
             catch (Exception ex)
@@ -176,6 +215,50 @@ namespace SpeedRave
             }
         }
 
+        public void SendPauseGameTimeImmediate()
+        {
+            if (!IsConnectedToLivesplit) return;
+
+            try
+            {
+                lock (streamLock)
+                {
+                    if (stream != null && stream.CanWrite)
+                    {
+                        stream.Write(PauseGameTimeBytes, 0, PauseGameTimeBytes.Length);
+                        stream.Flush();
+                        timerPaused = true;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                Disconnect();
+            }
+        }
+
+        public void SendUnpauseGameTimeImmediate()
+        {
+            if (!IsConnectedToLivesplit) return;
+
+            try
+            {
+                lock (streamLock)
+                {
+                    if (stream != null && stream.CanWrite)
+                    {
+                        stream.Write(UnpauseGameTimeBytes, 0, UnpauseGameTimeBytes.Length);
+                        stream.Flush();
+                        timerPaused = false;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                Disconnect();
+            }
+        }
+
         private async Task ProcessSendQueueAsync()
         {
             if (isSending) return;
@@ -192,7 +275,15 @@ namespace SpeedRave
                     }
 
                     byte[] data = Encoding.UTF8.GetBytes(message + "\r\n");
-                    await stream.WriteAsync(data, 0, data.Length);
+                    lock (streamLock)
+                    {
+                        if (stream != null && stream.CanWrite)
+                        {
+                            stream.Write(data, 0, data.Length);
+                            stream.Flush();
+                        }
+                    }
+                    await Task.Yield();
                 }
             }
             catch (Exception)
@@ -225,26 +316,85 @@ namespace SpeedRave
             }
         }
 
+        public void StartRun()
+        {
+            AttemptSendCommand("unpausegametime");
+            AttemptSendCommand("reset");
+            AttemptSendCommand("starttimer");
+            //AttemptSendCommand("setgametime 0");
+
+            ResetRunFlags();
+            timerPaused = false;
+            isLoading = false;
+            justLoadedScene = false;
+            gameStarted = true;
+            OnScreenTimer.StartTimer();
+        }
+
+        public void ResetRun()
+        {
+            AttemptSendCommand("reset");
+            //AttemptSendCommand("setgametime 0");
+            ResetRunFlags();
+            timerPaused = false;
+            isLoading = false;
+            justLoadedScene = false;
+            gameStarted = false;
+            OnScreenTimer.ResetTimer();
+        }
+
+        public void HandleEnding(string sceneLower)
+        {
+            if (!gameStarted) return;
+
+            bool shouldSplit = false;
+            if (sceneLower == "plaguending" && !plagueEnding)
+            {
+                plagueEnding = true;
+                shouldSplit = true;
+            }
+            else if (sceneLower == "spaceending" && !spaceEnding)
+            {
+                spaceEnding = true;
+                shouldSplit = true;
+            }
+            else if (sceneLower == "truending" && !trueEnding)
+            {
+                trueEnding = true;
+                shouldSplit = true;
+            }
+
+            if (shouldSplit)
+            {
+                endingCount++;
+                OnScreenTimer.StopTimer();
+                AttemptSendCommand("split");
+                //AttemptSendCommand($"setgametime {OnScreenTimer.CurrentTime:F2}");
+                AttemptSendCommand("pausegametime");
+            }
+        }
+
         public void UpdateAutosplitter()
         {
             string currentScene = currentSceneName;
 
-            // Reset Logic
+            // Fallback reset if on TitleScreen
             if (currentScene == "TitleScreen" && gameStarted)
             {
-                AttemptSendCommand("reset");
-                gameStarted = false;
+                ResetRun();
             }
 
-            // Start Logic
+            // Fallback start if Sewer_Start loaded before connect
             if (currentScene == "Sewer_Start" && !gameStarted)
             {
-                AttemptSendCommand("unpausegametime");
-                AttemptSendCommand("reset");
-                AttemptSendCommand("starttimer");
+                StartRun();
+            }
 
-                ResetRunFlags();
-                gameStarted = true;
+            // Ending fallback check
+            string sceneLower = currentScene.ToLower();
+            if (gameStarted && OnScreenTimer.IsEndingScene(sceneLower))
+            {
+                HandleEnding(sceneLower);
             }
 
             // Split Logic
@@ -278,41 +428,16 @@ namespace SpeedRave
                     if (playerFood.hasDuck && !gotDuck) { AttemptSendCommand("split"); gotDuck = true; }
                     if (playerFood.hasPizza && !gotPizza) { AttemptSendCommand("split"); gotPizza = true; }
                 }
-
-                string sceneLower = currentScene.ToLower();
-                if (gameStarted && (sceneLower.Contains("ending") || sceneLower == "plaguending" || sceneLower == "truending"))
-                {
-                    if (sceneLower == "plaguending" && !plagueEnding)
-                    {
-                        plagueEnding = true;
-                        AttemptSendCommand("split");
-                        endingCount++;
-                    }
-                    else if (sceneLower == "spaceending" && !spaceEnding)
-                    {
-                        spaceEnding = true;
-                        AttemptSendCommand("split");
-                        endingCount++;
-                    }
-                    else if (sceneLower == "truending" && !trueEnding)
-                    {
-                        trueEnding = true;
-                        AttemptSendCommand("split");
-                        endingCount++;
-                    }
-                }
             }
 
             // Loading Logic
             if (isLoading && !timerPaused)
             {
-                AttemptSendCommand("pausegametime");
-                timerPaused = true;
+                SendPauseGameTimeImmediate();
             }
             else if (timerPaused && (!isLoading || currentScene == "TitleScreen"))
             {
-                AttemptSendCommand("unpausegametime");
-                timerPaused = false;
+                SendUnpauseGameTimeImmediate();
             }
         }
 
