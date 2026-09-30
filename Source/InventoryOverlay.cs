@@ -13,6 +13,7 @@ namespace SpeedRave
         public static float rowHeight = 55;
 
         // Flags
+        public static Font GameFont { get; private set; }
         private bool fontFound = false;
         private float lastFontSearchTime = -10f;
         private const float FontSearchCooldown = 5f;
@@ -166,6 +167,7 @@ namespace SpeedRave
                 {
                     textStyle.font = font;
                     shadowStyle.font = font;
+                    GameFont = font;
                     fontFound = true;
                     break;
                 }

@@ -117,6 +117,13 @@ namespace SpeedRave
         private string fpsInput = "-1";
         private float saveFeedbackTime = 0f;
         private bool saveSuccess = false;
+        private float seedFeedbackTime = 0f;
+        private string seedFeedbackMessage = "";
+
+        private static float seedFlashTimer = 0f;
+        private static string seedFlashText = "";
+        private GUIStyle seedFlashStyle;
+        private GUIStyle seedFlashShadowStyle;
 
         private static bool SafeGetKeyDown(string bind)
         {
@@ -148,6 +155,11 @@ namespace SpeedRave
 
             if (Plugin.TrainerEnabled.Value)
             {
+                if (SafeGetKeyDown(Plugin.RestartBind.Value))
+                {
+                    TriggerInstantRestart();
+                }
+
                 if (SafeGetKeyDown(Plugin.StorePositionBind.Value))
                 {
                     StorePlayerPosition();
@@ -199,6 +211,11 @@ namespace SpeedRave
 
         private void OnGUI()
         {
+            if (Time.unscaledTime < seedFlashTimer && !string.IsNullOrEmpty(seedFlashText))
+            {
+                DrawSeedFlash();
+            }
+
             if (showGUI)
             {
                 winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
@@ -219,6 +236,45 @@ namespace SpeedRave
             }
         }
 
+        private void DrawSeedFlash()
+        {
+            if (seedFlashStyle == null)
+            {
+                seedFlashStyle = new GUIStyle();
+                seedFlashStyle.fontSize = 32;
+                seedFlashStyle.alignment = TextAnchor.UpperLeft;
+                seedFlashStyle.fontStyle = FontStyle.Bold;
+
+                seedFlashShadowStyle = new GUIStyle();
+                seedFlashShadowStyle.fontSize = 32;
+                seedFlashShadowStyle.alignment = TextAnchor.UpperLeft;
+                seedFlashShadowStyle.fontStyle = FontStyle.Bold;
+            }
+
+            if (InventoryOverlay.GameFont != null)
+            {
+                seedFlashStyle.font = InventoryOverlay.GameFont;
+                seedFlashShadowStyle.font = InventoryOverlay.GameFont;
+            }
+
+            float timeLeft = seedFlashTimer - Time.unscaledTime;
+            float alpha = Mathf.Clamp01(timeLeft / 0.25f);
+
+            Color textColor = new Color(1f, 1f, 1f, alpha);
+            Color shadowColor = new Color(0f, 0f, 0f, alpha * 0.85f);
+
+            seedFlashStyle.normal.textColor = textColor;
+            seedFlashShadowStyle.normal.textColor = shadowColor;
+
+            float x = 20f;
+            float y = 20f;
+            float w = 500f;
+            float h = 60f;
+
+            GUI.Label(new Rect(x + 2, y + 2, w, h), seedFlashText, seedFlashShadowStyle);
+            GUI.Label(new Rect(x, y, w, h), seedFlashText, seedFlashStyle);
+        }
+
         private void ConfigWinProc(int id)
         {
             configScroll = GUILayout.BeginScrollView(configScroll);
@@ -227,7 +283,7 @@ namespace SpeedRave
             Plugin.QuickStart.Value = GUILayout.Toggle(Plugin.QuickStart.Value, " Quick Start (Space to Start)");
             Plugin.QuitToMenu.Value = GUILayout.Toggle(Plugin.QuitToMenu.Value, " Quit to Menu (Cancel Key)");
             Plugin.ClearSaveOnStart.Value = GUILayout.Toggle(Plugin.ClearSaveOnStart.Value, " Clear Save on New Game (Speedruns)");
-            Plugin.RemoveMusic.Value = GUILayout.Toggle(Plugin.RemoveMusic.Value, " Remove Looping Music");
+            Plugin.RemoveMusic.Value = GUILayout.Toggle(Plugin.RemoveMusic.Value, " Remove Music");
 
             GUILayout.Label("<b>Autosplitter</b>");
             Plugin.AutosplitterEnabled.Value = GUILayout.Toggle(Plugin.AutosplitterEnabled.Value, " Enable Autosplitter");
@@ -235,11 +291,20 @@ namespace SpeedRave
             Plugin.KeySplit.Value = GUILayout.Toggle(Plugin.KeySplit.Value, " Split on Key");
             Plugin.TwentyFruitSplit.Value = GUILayout.Toggle(Plugin.TwentyFruitSplit.Value, " Split on 20 Fruit");
             Plugin.ItemSplit.Value = GUILayout.Toggle(Plugin.ItemSplit.Value, " Split on Item Pickup");
+            Plugin.LiveSplitAutoReconnect.Value = GUILayout.Toggle(Plugin.LiveSplitAutoReconnect.Value, " Auto-Reconnect LiveSplit (Every 6s)");
 
             GUILayout.Space(10);
 
             GUILayout.Label("<b>Seed Control</b>");
             Plugin.SeedEnabled.Value = GUILayout.Toggle(Plugin.SeedEnabled.Value, " Enable Seeding");
+
+            GUILayout.Label("<b>Speedrun Timer</b>");
+            Plugin.ShowOnScreenTimer.Value = GUILayout.Toggle(Plugin.ShowOnScreenTimer.Value, " Show On-Screen Timer");
+            if (Plugin.ShowOnScreenTimer.Value)
+            {
+                GUILayout.Label($"Timer Font Size: {Plugin.TimerFontSize.Value:F0}");
+                Plugin.TimerFontSize.Value = GUILayout.HorizontalSlider(Plugin.TimerFontSize.Value, 20f, 80f);
+            }
 
             GUILayout.Label("<b>Inventory Overlay</b>");
             Plugin.InventoryOverlayEnabled.Value = GUILayout.Toggle(Plugin.InventoryOverlayEnabled.Value, " Enable Inventory Overlay");
@@ -290,6 +355,8 @@ namespace SpeedRave
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Binds</b>");
+            GUILayout.Label("Restart Run Bind:");
+            Plugin.RestartBind.Value = GUILayout.TextField(Plugin.RestartBind.Value);
             GUILayout.Label("Add Cheese Bind:");
             Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
             GUILayout.Label("Remove Cheese Bind:");
@@ -416,6 +483,38 @@ namespace SpeedRave
                     }
                 }
                 GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Copy Seed"))
+                {
+                    GUIUtility.systemCopyBuffer = Patches.SetSeedPatchs.Seed.ToString();
+                    seedFeedbackMessage = "✓ Seed copied to clipboard!";
+                    seedFeedbackTime = Time.unscaledTime + 2.0f;
+                }
+                if (GUILayout.Button("Paste Seed"))
+                {
+                    string clip = GUIUtility.systemCopyBuffer;
+                    if (int.TryParse(clip, out int pastedSeed))
+                    {
+                        Patches.SetSeedPatchs.Seed = pastedSeed;
+                        UnityEngine.Random.InitState(pastedSeed);
+                        Patches.SetSeedPatchs.randomSeed = false;
+                        seedInput = pastedSeed.ToString();
+                        seedFeedbackMessage = "✓ Seed pasted from clipboard!";
+                        seedFeedbackTime = Time.unscaledTime + 2.0f;
+                    }
+                    else
+                    {
+                        seedFeedbackMessage = "✗ Clipboard is not a valid number";
+                        seedFeedbackTime = Time.unscaledTime + 2.0f;
+                    }
+                }
+                GUILayout.EndHorizontal();
+
+                if (Time.unscaledTime < seedFeedbackTime)
+                {
+                    GUILayout.Label($"<color=#55FF55><b>{seedFeedbackMessage}</b></color>");
+                }
+
                 Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
             }
             
@@ -442,6 +541,16 @@ namespace SpeedRave
 
                 // Trainer
                 GUILayout.Label("<b>Trainer</b>");
+
+                // Instant Restart
+                GUILayout.BeginHorizontal();
+                //GUI.color = new Color(1f, 0.65f, 0.2f);
+                if (GUILayout.Button($"Instant Restart ({Plugin.RestartBind.Value.ToUpper()})"))
+                {
+                    TriggerInstantRestart();
+                }
+                GUI.color = Color.white;
+                GUILayout.EndHorizontal();
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
@@ -559,6 +668,53 @@ namespace SpeedRave
                 }
             }
             return 0;
+        }
+
+        public static void TriggerInstantRestart()
+        {
+            if (Autosplitter.Instance != null && Autosplitter.Instance.IsConnectedToLivesplit)
+            {
+                Autosplitter.Instance.AttemptSendCommand("reset");
+            }
+
+            if (Plugin.ClearSaveOnStart.Value)
+            {
+                var titleController = UnityEngine.Object.FindObjectOfType<TitleScreenControler>();
+                if (titleController != null)
+                {
+                    titleController.ClearSaveData();
+                }
+                else
+                {
+                    PlayerPrefs.DeleteAll();
+                    PlayerPrefs.Save();
+                }
+            }
+
+            if (Plugin.SeedEnabled.Value)
+            {
+                if (Patches.SetSeedPatchs.randomSeed)
+                {
+                    Patches.SetSeedPatchs.Init();
+                }
+                seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
+                seedFlashTimer = Time.unscaledTime + 1.0f;
+            }
+
+            OnScreenTimer.ResetTimer();
+
+            var persist = UnityEngine.Object.FindObjectOfType<PersistControl>();
+            if (persist != null)
+            {
+                UnityEngine.Object.Destroy(persist.gameObject);
+            }
+            var food = UnityEngine.Object.FindObjectOfType<FoodControl>();
+            if (food != null)
+            {
+                UnityEngine.Object.Destroy(food.gameObject);
+            }
+
+            SceneManager.LoadScene("Sewer_Start");
         }
     }
 }

@@ -47,6 +47,12 @@ namespace SpeedRave
         public static ConfigEntry<string> OpenTrainerBind;
         public static ConfigEntry<string> IncrementSceneBind;
         public static ConfigEntry<string> DecrementSceneBind;
+        public static ConfigEntry<string> RestartBind;
+
+        public static ConfigEntry<bool> LiveSplitAutoReconnect;
+
+        public static ConfigEntry<bool> ShowOnScreenTimer;
+        public static ConfigEntry<float> TimerFontSize;
 
         public static ConfigEntry<bool> InventoryOverlayEnabled;
         public static ConfigEntry<bool> UseIcons;
@@ -100,6 +106,12 @@ namespace SpeedRave
             OpenTrainerBind = Config.Bind("Binds", "Open Trainer Bind", "INSERT");
             IncrementSceneBind = Config.Bind("Binds", "Increment Scene Bind", "J");
             DecrementSceneBind = Config.Bind("Binds", "Decrement Scene Bind", "K");
+            RestartBind = Config.Bind("Binds", "Restart Run Bind", "F6", "Instant restart run hotkey");
+
+            LiveSplitAutoReconnect = Config.Bind("AutoSplitter", "Auto Reconnect LiveSplit", false, "Periodically retry connecting to LiveSplit in the background");
+
+            ShowOnScreenTimer = Config.Bind("Timer", "Show On Screen Timer", false, "Display loadless in-game speedrun timer");
+            TimerFontSize = Config.Bind("Timer", "Timer Font Size", 40f, "Font size of the on-screen timer");
 
             InventoryOverlayEnabled = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false);
             UseIcons = Config.Bind("Inventory Overlay", "Use Icons", true);
@@ -107,7 +119,6 @@ namespace SpeedRave
             IconSize = Config.Bind("Inventory Overlay", "Icon Size", 60f);
             TextHeight = Config.Bind("Inventory Overlay", "Text Height", 50f);
             Padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f);
-
 
             TargetFPS = Config.Bind("Performance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
             VSyncEnabled = Config.Bind("Performance", "VSyncEnabled", true, "Enable or disable V-Sync");
@@ -120,6 +131,7 @@ namespace SpeedRave
             _mod.AddComponent<GUIComponent>();
             _mod.AddComponent<Autosplitter>();
             _mod.AddComponent<InventoryOverlay>();
+            _mod.AddComponent<OnScreenTimer>();
             GameObject.DontDestroyOnLoad(_mod);
             ReferenceManager.Initialize();
 

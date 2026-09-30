@@ -205,8 +205,20 @@ namespace SpeedRave
             }
         }
 
+        private float lastReconnectAttempt = 0f;
+        private const float ReconnectInterval = 6f;
+
         public void Update()
         {
+            if (Plugin.AutosplitterEnabled.Value && Plugin.LiveSplitAutoReconnect.Value && !IsConnectedToLivesplit && !isConnecting)
+            {
+                if (Time.unscaledTime - lastReconnectAttempt >= ReconnectInterval)
+                {
+                    lastReconnectAttempt = Time.unscaledTime;
+                    ConnectToLiveSplit();
+                }
+            }
+
             if (IsConnectedToLivesplit || debug)
             {
                 UpdateAutosplitter();
