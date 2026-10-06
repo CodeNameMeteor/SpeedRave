@@ -61,7 +61,8 @@ namespace SpeedRave
             shadowStyle.alignment = TextAnchor.MiddleLeft;
             shadowStyle.richText = true;
 
-            texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "CustomTextures");
+            // BepInEx's own root path, rather than AppDomain.BaseDirectory, which depends on how the game was launched.
+            texturePath = Path.Combine(BepInEx.Paths.BepInExRootPath, "CustomTextures");
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
