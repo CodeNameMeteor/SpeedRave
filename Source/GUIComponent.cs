@@ -99,9 +99,11 @@ namespace SpeedRave
         private Vector2 mainScroll = Vector2.zero;
 
 
-        private const int MAIN_WINDOW_ID = 0;
-        private const int SCENE_WINDOW_ID = 1;
-        private const int CONFIG_WINDOW_ID = 2;
+        // IMGUI window IDs are global across every mod, so use distinctive values rather than 0/1/2, which other
+        // IMGUI mods commonly use too.
+        private const int MAIN_WINDOW_ID = 0x53524D01;
+        private const int SCENE_WINDOW_ID = 0x53524D02;
+        private const int CONFIG_WINDOW_ID = 0x53524D03;
 
         private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, ConfigWindowHeight);
         private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
