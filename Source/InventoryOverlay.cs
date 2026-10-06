@@ -160,7 +160,7 @@ namespace SpeedRave
             foreach (Font font in allFonts)
             {
                 if (font == null) continue;
-                string fName = font.name.ToLower();
+                string fName = font.name.ToLowerInvariant();
                 if (fName.Contains("autumn") || fName.Contains("larua"))
                 {
                     textStyle.font = font;

@@ -92,7 +92,7 @@ namespace SpeedRave
             if (mode == LoadSceneMode.Additive) return;
 
             currentSceneName = scene.name;
-            string sceneLower = scene.name.ToLower();
+            string sceneLower = scene.name.ToLowerInvariant();
 
             // Only start a run when none is in progress. Instant Restart and the title screen reset the run
             // first; loading Sewer_Start mid-run (level loader, Room Lock) must not reset LiveSplit.

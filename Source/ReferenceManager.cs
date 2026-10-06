@@ -69,7 +69,7 @@ namespace SpeedRave
 
             RefreshReferences();
 
-            string sceneLower = scene.name.ToLower();
+            string sceneLower = scene.name.ToLowerInvariant();
             if (sceneLower != "titlescreen" && sceneLower != "credits" && ActiveFoodControl == null)
             {
                 ActiveFoodControl = GameObject.FindObjectOfType<FoodControl>();
@@ -93,7 +93,7 @@ namespace SpeedRave
             if (activeFoodControl != null || Time.unscaledTime < nextFoodControlLookup) return;
             nextFoodControlLookup = Time.unscaledTime + 1f;
 
-            string sceneLower = SceneManager.GetActiveScene().name.ToLower();
+            string sceneLower = SceneManager.GetActiveScene().name.ToLowerInvariant();
             if (sceneLower == "titlescreen" || sceneLower == "credits") return;
             activeFoodControl = GameObject.FindObjectOfType<FoodControl>();
         }

@@ -131,7 +131,7 @@ namespace SpeedRave
             if (string.IsNullOrWhiteSpace(bind)) return false;
             try
             {
-                return Input.GetKeyDown(bind.Trim().ToLower());
+                return Input.GetKeyDown(bind.Trim().ToLowerInvariant());
             }
             catch
             {
@@ -531,7 +531,7 @@ namespace SpeedRave
             // Run Controls
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.BeginHorizontal();
-            string restartBindDisplay = string.IsNullOrEmpty(Plugin.RestartBind.Value) ? "UNBOUND" : Plugin.RestartBind.Value.ToUpper();
+            string restartBindDisplay = string.IsNullOrEmpty(Plugin.RestartBind.Value) ? "UNBOUND" : Plugin.RestartBind.Value.ToUpperInvariant();
             if (GUILayout.Button($"Instant Restart ({restartBindDisplay})"))
             {
                 TriggerInstantRestart();
@@ -556,7 +556,7 @@ namespace SpeedRave
                 GUILayout.Label("<b>Room Lock</b>");
                 string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
                 GUILayout.Label($"Status: {lockStatus}");
-                if (GUILayout.Button(locked ? $"Unlock ({Plugin.LockBind.Value.ToUpper()})" : $"Lock ({Plugin.LockBind.Value.ToUpper()})"))
+                if (GUILayout.Button(locked ? $"Unlock ({Plugin.LockBind.Value.ToUpperInvariant()})" : $"Lock ({Plugin.LockBind.Value.ToUpperInvariant()})"))
                 {
                     ToggleSceneLock();
                 }
@@ -566,20 +566,20 @@ namespace SpeedRave
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Cheese ({Plugin.AddCheeseBind.Value.ToUpper()})")) ModifyCheese(1);
-                if (GUILayout.Button($"Sub Cheese ({Plugin.RemoveCheeseBind.Value.ToUpper()})")) ModifyCheese(-1);
+                if (GUILayout.Button($"Add Cheese ({Plugin.AddCheeseBind.Value.ToUpperInvariant()})")) ModifyCheese(1);
+                if (GUILayout.Button($"Sub Cheese ({Plugin.RemoveCheeseBind.Value.ToUpperInvariant()})")) ModifyCheese(-1);
                 GUILayout.EndHorizontal();
 
                 // Fruit Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Fruit ({Plugin.AddFruitBind.Value.ToUpper()})")) ModifyFruit(1);
-                if (GUILayout.Button($"Sub Fruit ({Plugin.RemoveFruitBind.Value.ToUpper()})")) ModifyFruit(-1);
+                if (GUILayout.Button($"Add Fruit ({Plugin.AddFruitBind.Value.ToUpperInvariant()})")) ModifyFruit(1);
+                if (GUILayout.Button($"Sub Fruit ({Plugin.RemoveFruitBind.Value.ToUpperInvariant()})")) ModifyFruit(-1);
                 GUILayout.EndHorizontal();
 
                 // Position Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Store Pos ({Plugin.StorePositionBind.Value.ToUpper()})")) StorePlayerPosition();
-                if (GUILayout.Button($"Restore Pos ({Plugin.RestorePositionBind.Value.ToUpper()})")) RestorePlayerPosition();
+                if (GUILayout.Button($"Store Pos ({Plugin.StorePositionBind.Value.ToUpperInvariant()})")) StorePlayerPosition();
+                if (GUILayout.Button($"Restore Pos ({Plugin.RestorePositionBind.Value.ToUpperInvariant()})")) RestorePlayerPosition();
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(5);
