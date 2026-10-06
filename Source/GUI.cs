@@ -362,6 +362,8 @@ namespace SpeedRave
 
             GUILayout.Label("<b>Seed Control</b>");
             Plugin.SeedEnabled.Value = GUILayout.Toggle(Plugin.SeedEnabled.Value, " Enable Seeding");
+            GUILayout.Label($"Seed Flash on Restart: {Plugin.SeedFlashDuration.Value:F1}s");
+            Plugin.SeedFlashDuration.Value = (float)Math.Round(GUILayout.HorizontalSlider(Plugin.SeedFlashDuration.Value, 0.5f, 10f) * 2f) / 2f;
 
             GUILayout.Label("<b>Speedrun Timer</b>");
             Plugin.ShowOnScreenTimer.Value = GUILayout.Toggle(Plugin.ShowOnScreenTimer.Value, " Show On-Screen Timer");
@@ -850,7 +852,7 @@ namespace SpeedRave
                 Patches.SetSeedPatchs.Init();
                 seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
                 seedFlashMode = Patches.SetSeedPatchs.randomSeed ? "Random Seed" : "Set Seed";
-                seedFlashTimer = Time.unscaledTime + 1.0f;
+                seedFlashTimer = Time.unscaledTime + Mathf.Clamp(Plugin.SeedFlashDuration.Value, 0.5f, 10f);
             }
 
             OnScreenTimer.ResetTimer();

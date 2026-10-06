@@ -28,6 +28,7 @@ namespace SpeedRave
         public static ConfigEntry<bool> RemoveMusic;
         public static ConfigEntry<bool> QuickStart;
         public static ConfigEntry<bool> SeedEnabled;
+        public static ConfigEntry<float> SeedFlashDuration;
 
         public static ConfigEntry<bool> TrainerEnabled;
 
@@ -93,6 +94,7 @@ namespace SpeedRave
             QuickStart = Config.Bind("Patches", "QuickStart", true);
 
             SeedEnabled = Config.Bind("Seeding", "Set Seed", true);
+            SeedFlashDuration = Config.Bind("Seeding", "Seed Flash Duration", 1f, new ConfigDescription("Seconds the seed is shown on screen after Instant Restart. Raise it if you need longer to read or record the seed.", new AcceptableValueRange<float>(0.5f, 10f)));
 
             TrainerEnabled = Config.Bind("Trainer", "Enable Trainer", true);
 
