@@ -26,37 +26,34 @@ namespace SpeedRave.Patches
 
         [HarmonyPatch(typeof(DoorBehavior), "OnTriggerEnter")]
         [HarmonyPrefix]
-        static bool DoorBehaviorOnTriggerEnterPatch(Collider other)
+        static void DoorBehaviorOnTriggerEnterPatch(Collider other)
         {
             if (other != null && other.CompareTag("Player"))
             {
                 Autosplitter.NotifyLoadingStarted();
             }
-            return true;
         }
 
         [HarmonyPatch(typeof(EndingTeleporter), "OnTriggerEnter")]
         [HarmonyPrefix]
-        static bool EndingTeleporterOnTriggerEnterPatch(Collider other)
+        static void EndingTeleporterOnTriggerEnterPatch(Collider other)
         {
             if (other != null && other.CompareTag("Player"))
             {
                 Autosplitter.NotifyLoadingStarted();
             }
-            return true;
         }
 
         [HarmonyPatch(typeof(DoorBehavior), "Start")]
         [HarmonyPrefix]
-        static bool DoorBehaviorStartPatch()
+        static void DoorBehaviorStartPatch()
         {
             Autosplitter.NotifyLoadingFinished();
-            return true;
         }
 
         [HarmonyPatch(typeof(TrainMapScript), "OnTriggerStay")]
         [HarmonyPrefix]
-        static bool TrainMapScriptOnTriggerStayPatch(TrainMapScript __instance, Collider other)
+        static void TrainMapScriptOnTriggerStayPatch(TrainMapScript __instance, Collider other)
         {
             if (__instance != null && other != null && other.CompareTag("Player") && Input.GetButtonDown("Fire1"))
             {
@@ -73,7 +70,6 @@ namespace SpeedRave.Patches
                     }
                 }
             }
-            return true;
         }
     }
 }

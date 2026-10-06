@@ -8,13 +8,12 @@ namespace SpeedRave.Patches
         public static String lockedScene;
         [HarmonyPatch(typeof(DoorBehavior), "OnTriggerEnter")]
         [HarmonyPrefix]
-        static bool DoorBehaviorOnTriggerEnterPatch(DoorBehavior __instance)
+        static void DoorBehaviorOnTriggerEnterPatch(DoorBehavior __instance)
         {
-           if(GUIComponent.sceneLocked)
+            if (GUIComponent.sceneLocked)
             {
                 __instance.sceneSelection = lockedScene;
             }
-            return true;
         }
     }
 }
