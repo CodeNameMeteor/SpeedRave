@@ -1,6 +1,8 @@
 using BepInEx;
+using BepInEx.Configuration;
 using SpeedRave.Patches;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -84,6 +86,13 @@ namespace SpeedRave
         public const int WIDTH = 275;
         public const int HEIGHT = 600;
         public static bool showGUI = false;
+
+        // True while a trainer text field has keyboard focus. Hotkeys, QuickStart and player movement are
+        // suppressed so typing a seed or a bind name doesn't trigger them.
+        public static bool IsTyping => showGUI && GUIUtility.keyboardControl != 0;
+
+        // Bind text that has been edited but not applied yet, so half-typed names never become live binds.
+        private readonly Dictionary<ConfigEntry<string>, string> pendingBinds = new Dictionary<ConfigEntry<string>, string>();
         public static bool sceneSelectorShowGUI = false;
 
         private static bool configShowGUI = false;
@@ -144,6 +153,7 @@ namespace SpeedRave
             if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value))
             {
                 showGUI = !showGUI;
+                GUIUtility.keyboardControl = 0;
                 if (sceneSelectorShowGUI)
                 {
                     sceneSelectorShowGUI = false;
@@ -152,6 +162,11 @@ namespace SpeedRave
                 {
                     configShowGUI = false;
                 }
+            }
+
+            if (IsTyping)
+            {
+                return;
             }
 
             if (SafeGetKeyDown(Plugin.RestartBind.Value))
@@ -361,34 +376,23 @@ namespace SpeedRave
             }
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.Space(10);
-            GUILayout.Label("Restart Run Bind:");
-            Plugin.RestartBind.Value = GUILayout.TextField(Plugin.RestartBind.Value);
+            BindField("Restart Run Bind:", Plugin.RestartBind);
 
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Trainer Binds</b>");
-            GUILayout.Label("Add Cheese Bind:");
-            Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
-            GUILayout.Label("Remove Cheese Bind:");
-            Plugin.RemoveCheeseBind.Value = GUILayout.TextField(Plugin.RemoveCheeseBind.Value);
-            GUILayout.Label("Add Fruit Bind:");
-            Plugin.AddFruitBind.Value = GUILayout.TextField(Plugin.AddFruitBind.Value);
-            GUILayout.Label("Remove Fruit Bind:");
-            Plugin.RemoveFruitBind.Value = GUILayout.TextField(Plugin.RemoveFruitBind.Value);
-            GUILayout.Label("Lock Scene Bind:");
-            Plugin.LockBind.Value = GUILayout.TextField(Plugin.LockBind.Value);
-            GUILayout.Label("Store Position Bind:");
-            Plugin.StorePositionBind.Value = GUILayout.TextField(Plugin.StorePositionBind.Value);
-            GUILayout.Label("Restore Position Bind:");
-            Plugin.RestorePositionBind.Value = GUILayout.TextField(Plugin.RestorePositionBind.Value);
-            GUILayout.Label("Open Trainer Bind:");
-            Plugin.OpenTrainerBind.Value = GUILayout.TextField(Plugin.OpenTrainerBind.Value);
-            GUILayout.Label("Increment Scene Bind:");
-            Plugin.IncrementSceneBind.Value = GUILayout.TextField(Plugin.IncrementSceneBind.Value);
-            GUILayout.Label("Decrement Scene Bind:");
-            Plugin.DecrementSceneBind.Value = GUILayout.TextField(Plugin.DecrementSceneBind.Value);
+            BindField("Add Cheese Bind:", Plugin.AddCheeseBind);
+            BindField("Remove Cheese Bind:", Plugin.RemoveCheeseBind);
+            BindField("Add Fruit Bind:", Plugin.AddFruitBind);
+            BindField("Remove Fruit Bind:", Plugin.RemoveFruitBind);
+            BindField("Lock Scene Bind:", Plugin.LockBind);
+            BindField("Store Position Bind:", Plugin.StorePositionBind);
+            BindField("Restore Position Bind:", Plugin.RestorePositionBind);
+            BindField("Open Trainer Bind:", Plugin.OpenTrainerBind);
+            BindField("Increment Scene Bind:", Plugin.IncrementSceneBind);
+            BindField("Decrement Scene Bind:", Plugin.DecrementSceneBind);
 
             GUILayout.Space(15);
             bool isSavedRecently = Time.unscaledTime < saveFeedbackTime;
@@ -431,6 +435,34 @@ namespace SpeedRave
 
             GUILayout.EndScrollView();
             GUI.DragWindow();
+        }
+
+        // A bind text field whose edits only take effect when Apply is pressed.
+        private void BindField(string label, ConfigEntry<string> entry)
+        {
+            GUILayout.Label(label);
+            GUILayout.BeginHorizontal();
+            string current = entry.Value ?? "";
+            if (!pendingBinds.TryGetValue(entry, out string text))
+            {
+                text = current;
+            }
+            text = GUILayout.TextField(text);
+            if (text != current)
+            {
+                pendingBinds[entry] = text;
+                if (GUILayout.Button("Apply", GUILayout.Width(60)))
+                {
+                    entry.Value = text.Trim();
+                    pendingBinds.Remove(entry);
+                    GUIUtility.keyboardControl = 0;
+                }
+            }
+            else
+            {
+                pendingBinds.Remove(entry);
+            }
+            GUILayout.EndHorizontal();
         }
 
         private void SceneWinProc(int id)

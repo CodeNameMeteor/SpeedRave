@@ -101,6 +101,7 @@
     <Compile Include="Patches\QuickStart.cs" />
     <Compile Include="Patches\SceneLock.cs" />
     <Compile Include="Patches\SetSeed.cs" />
+    <Compile Include="Patches\TypingInputBlock.cs" />
     <Compile Include="Patches\Title.cs" />
     <Compile Include="Patches\QuitToMenu.cs" />
     <Compile Include="Patches\RemoveMusic.cs" />

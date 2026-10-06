@@ -15,7 +15,7 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         static void TitleScreenControlerUpdatePatch(TitleScreenControler __instance)
         {
-            if (Plugin.QuickStart.Value)
+            if (Plugin.QuickStart.Value && !GUIComponent.IsTyping)
             {
                 if (Input.GetButtonDown("Jump"))
                 {

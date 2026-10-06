@@ -146,6 +146,8 @@ namespace SpeedRave
             harmony.PatchAll(typeof(SetSeedPatchs));
             harmony.PatchAll(typeof(SceneLock));
             harmony.PatchAll(typeof(CursorLockFix));
+            harmony.PatchAll(typeof(BlockMovementWhileTyping));
+            harmony.PatchAll(typeof(BlockJumpWhileTyping));
         }
         public static bool SaveConfig()
         {
