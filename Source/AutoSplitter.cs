@@ -1,6 +1,5 @@
 using BepInEx;
 using System;
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
@@ -70,8 +69,6 @@ namespace SpeedRave
         private int connectionGeneration = 0;
         private volatile int closedGeneration = -1;
         private CancellationTokenSource netCts;
-        private readonly ConcurrentQueue<string> sendQueue = new ConcurrentQueue<string>();
-        private bool isSending = false;
 
         private bool timerPaused = false;
         private string currentSceneName = "";
@@ -259,10 +256,6 @@ namespace SpeedRave
             }
             catch (Exception ex) { LogDisconnectError(ex); }
             client = null;
-
-            // Clear send queue
-            while (sendQueue.TryDequeue(out _)) { }
-            isSending = false;
         }
 
         private static void LogDisconnectError(Exception ex)
@@ -273,36 +266,20 @@ namespace SpeedRave
             }
         }
 
+        // All LiveSplit commands go through here and are written immediately, in the order they are issued.
+        // (They used to sit in a queue that sent one command per frame, which delayed bursts and let the
+        // pause/unpause writes overtake queued commands.) Writes are bounded by the socket's send timeout.
         public void AttemptSendCommand(string command)
         {
-            if (!IsConnectedToLivesplit || string.IsNullOrEmpty(command)) return;
-
-            sendQueue.Enqueue(command);
-            if (!isSending)
-            {
-                _ = ProcessSendQueueAsync();
-            }
+            if (string.IsNullOrEmpty(command)) return;
+            WriteLine(Encoding.UTF8.GetBytes(command + "\r\n"));
         }
 
         public void SendPauseGameTimeImmediate()
         {
-            if (!IsConnectedToLivesplit) return;
-
-            try
+            if (WriteLine(PauseGameTimeBytes))
             {
-                lock (streamLock)
-                {
-                    if (stream != null && stream.CanWrite)
-                    {
-                        stream.Write(PauseGameTimeBytes, 0, PauseGameTimeBytes.Length);
-                        stream.Flush();
-                        timerPaused = true;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                Disconnect();
+                timerPaused = true;
             }
         }
 
@@ -316,7 +293,16 @@ namespace SpeedRave
 
         public void SendUnpauseGameTimeImmediate()
         {
-            if (!IsConnectedToLivesplit) return;
+            if (WriteLine(UnpauseGameTimeBytes))
+            {
+                timerPaused = false;
+            }
+        }
+
+        // Returns true if the data was written.
+        private bool WriteLine(byte[] data)
+        {
+            if (!IsConnectedToLivesplit) return false;
 
             try
             {
@@ -324,53 +310,21 @@ namespace SpeedRave
                 {
                     if (stream != null && stream.CanWrite)
                     {
-                        stream.Write(UnpauseGameTimeBytes, 0, UnpauseGameTimeBytes.Length);
+                        stream.Write(data, 0, data.Length);
                         stream.Flush();
-                        timerPaused = false;
+                        return true;
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Disconnect();
-            }
-        }
-
-        private async Task ProcessSendQueueAsync()
-        {
-            if (isSending) return;
-            isSending = true;
-
-            try
-            {
-                while (sendQueue.TryDequeue(out string message))
+                if (Plugin.Debug.Value)
                 {
-                    if (stream == null || client == null || !client.Connected)
-                    {
-                        Disconnect();
-                        break;
-                    }
-
-                    byte[] data = Encoding.UTF8.GetBytes(message + "\r\n");
-                    lock (streamLock)
-                    {
-                        if (stream != null && stream.CanWrite)
-                        {
-                            stream.Write(data, 0, data.Length);
-                            stream.Flush();
-                        }
-                    }
-                    await Task.Yield();
+                    Debug.LogWarning($"[SpeedRave] Write to LiveSplit failed: {ex.Message}");
                 }
-            }
-            catch (Exception)
-            {
                 Disconnect();
             }
-            finally
-            {
-                isSending = false;
-            }
+            return false;
         }
 
         private float lastReconnectAttempt = 0f;
