@@ -15,6 +15,10 @@ namespace SpeedRave
         private bool fontFound = false;
         private float lastFontSearchTime = -10f;
         private const float FontSearchCooldown = 5f;
+        // Resources.FindObjectsOfTypeAll<Font>() walks every loaded font; give up after this many tries
+        // (about a minute) if the game font never turns up, and keep using the default font.
+        private const int MaxFontSearches = 12;
+        private int fontSearches = 0;
 
         // References
         private GameObject inventoryGO;
@@ -114,7 +118,7 @@ namespace SpeedRave
             {
                 CheckInventoryState();
 
-                if (!fontFound && Time.unscaledTime - lastFontSearchTime > FontSearchCooldown)
+                if (!fontFound && fontSearches < MaxFontSearches && Time.unscaledTime - lastFontSearchTime > FontSearchCooldown)
                 {
                     AttemptFindFont();
                 }
@@ -156,6 +160,7 @@ namespace SpeedRave
         private void AttemptFindFont()
         {
             lastFontSearchTime = Time.unscaledTime;
+            fontSearches++;
             Font[] allFonts = Resources.FindObjectsOfTypeAll<Font>();
 
             foreach (Font font in allFonts)
