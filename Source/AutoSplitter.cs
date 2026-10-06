@@ -86,6 +86,9 @@ namespace SpeedRave
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            // Additive loads (e.g. the Sewer_Start sideload in ReferenceManager) are not room changes.
+            if (mode == LoadSceneMode.Additive) return;
+
             currentSceneName = scene.name;
             string sceneLower = scene.name.ToLower();
 
