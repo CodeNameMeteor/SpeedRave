@@ -9,7 +9,6 @@ namespace SpeedRave
         private static readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         // Time added back after a loading pause that had no load behind it.
         private static TimeSpan correction = TimeSpan.Zero;
-        public static float CurrentTime => (float)Elapsed.TotalSeconds;
         public static TimeSpan Elapsed => stopwatch.Elapsed + correction;
 
         // A trigger pauses the timer before the game loads the next room. If no room load follows within

@@ -1,6 +1,4 @@
-using BepInEx;
 using BepInEx.Configuration;
-using SpeedRave.Patches;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -100,7 +98,6 @@ namespace SpeedRave
         private Vector2 sceneScroll = Vector2.zero;
         private Vector2 mainScroll = Vector2.zero;
 
-        private int sceneIndex = 0;
 
         private const int MAIN_WINDOW_ID = 0;
         private const int SCENE_WINDOW_ID = 1;
@@ -123,7 +120,6 @@ namespace SpeedRave
         private bool hasStoredPosition = false;
 
         private string seedInput = "";
-        private int parsedSeed = 0;
         private string fpsInput = "-1";
         private float saveFeedbackTime = 0f;
         private bool saveSuccess = false;
@@ -192,15 +188,13 @@ namespace SpeedRave
 
                 if (SafeGetKeyDown(Plugin.IncrementSceneBind.Value))
                 {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex + 1) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                    int nextIndex = (GetCurrentSceneIndex() + 1) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[nextIndex]);
                 }
                 if (SafeGetKeyDown(Plugin.DecrementSceneBind.Value))
                 {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                    int previousIndex = (GetCurrentSceneIndex() - 1 + Scenes.Length) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[previousIndex]);
                 }
                 if (SafeGetKeyDown(Plugin.LockBind.Value))
                 {
@@ -569,7 +563,7 @@ namespace SpeedRave
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Set Seed"))
                 {
-                    if (int.TryParse(seedInput, out parsedSeed))
+                    if (int.TryParse(seedInput, out int parsedSeed))
                     {
                         Patches.SetSeedPatchs.Seed = parsedSeed;
                         Patches.SetSeedPatchs.randomSeed = false;

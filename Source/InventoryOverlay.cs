@@ -38,7 +38,6 @@ namespace SpeedRave
         {
             // Direct read of the FoodControl flag; these fields are public, so no per-frame reflection or boxing.
             public Func<FoodControl, bool> hasItem;
-            public string objectFieldName;
             public FieldInfo objectField;
 
             public Texture texture;
@@ -105,7 +104,6 @@ namespace SpeedRave
             allItems.Add(new ItemDef
             {
                 hasItem = hasItem,
-                objectFieldName = objField,
                 // Only read once while finding the item's sprite, so reflection is fine here.
                 objectField = typeof(FoodControl).GetField(objField)
             });

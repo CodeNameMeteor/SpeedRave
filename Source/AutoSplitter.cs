@@ -1,6 +1,4 @@
-using BepInEx;
 using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -12,8 +10,6 @@ namespace SpeedRave
 {
     public class Autosplitter : MonoBehaviour
     {
-        public bool debug = false;
-
         // Called by the trigger patches when a room change starts.
         public static void NotifyLoadingStarted()
         {
@@ -354,7 +350,6 @@ namespace SpeedRave
         public void ResetRun()
         {
             AttemptSendCommand("reset");
-            //AttemptSendCommand("setgametime 0");
             ResetSplitFlags();
             timerPaused = false;
             RunState.Reset();

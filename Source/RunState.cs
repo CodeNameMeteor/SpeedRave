@@ -22,7 +22,6 @@ namespace SpeedRave
         public static bool PlagueEnding { get; private set; }
         public static bool SpaceEnding { get; private set; }
         public static bool TrueEnding { get; private set; }
-        public static int EndingCount { get; private set; }
 
         public static bool AllEndingsReached => PlagueEnding && SpaceEnding && TrueEnding;
 
@@ -67,7 +66,6 @@ namespace SpeedRave
             else if (sceneLower == "spaceending" && !SpaceEnding) { SpaceEnding = true; isNew = true; }
             else if (sceneLower == "truending" && !TrueEnding) { TrueEnding = true; isNew = true; }
 
-            if (isNew) EndingCount++;
             return isNew;
         }
 
@@ -84,7 +82,6 @@ namespace SpeedRave
             PlagueEnding = false;
             SpaceEnding = false;
             TrueEnding = false;
-            EndingCount = 0;
         }
     }
 }

@@ -31,7 +31,6 @@ namespace SpeedRave
         public static FieldInfo MouseLookField { get; private set; }
         public static FieldInfo CharacterTargetRotField { get; private set; }
         public static FieldInfo CameraTargetRotField { get; private set; }
-        public static FieldInfo CameraField { get; private set; }
 
         // Initialization
         public static void Initialize()
@@ -40,7 +39,6 @@ namespace SpeedRave
             MouseLookField = AccessTools.Field(typeof(FirstPersonController), "m_MouseLook");
             CharacterTargetRotField = AccessTools.Field(typeof(MouseLook), "m_CharacterTargetRot");
             CameraTargetRotField = AccessTools.Field(typeof(MouseLook), "m_CameraTargetRot");
-            CameraField = AccessTools.Field(typeof(FirstPersonController), "m_Camera");
 
             // Subscribe to scene changes
             SceneManager.sceneLoaded += OnSceneLoaded;
