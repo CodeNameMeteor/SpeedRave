@@ -63,6 +63,10 @@ namespace SpeedRave
         private static readonly byte[] PauseGameTimeBytes = Encoding.UTF8.GetBytes("pausegametime\r\n");
         private static readonly byte[] UnpauseGameTimeBytes = Encoding.UTF8.GetBytes("unpausegametime\r\n");
         private bool isConnecting = false;
+        // Each connection gets a number. The background reader reports which connection the remote closed,
+        // and Update disconnects only if that is still the current one.
+        private int connectionGeneration = 0;
+        private volatile int closedGeneration = -1;
         private CancellationTokenSource netCts;
         private readonly ConcurrentQueue<string> sendQueue = new ConcurrentQueue<string>();
         private bool isSending = false;
@@ -158,7 +162,8 @@ namespace SpeedRave
                     // belong to a newer connection.
                     NetworkStream readStream = stream;
                     CancellationToken readToken = netCts.Token;
-                    _ = Task.Run(() => ReadLoopAsync(readStream, readToken));
+                    int generation = ++connectionGeneration;
+                    _ = Task.Run(() => ReadLoopAsync(readStream, readToken, generation));
 
                     SyncRunStateAfterConnect();
                 }
@@ -201,7 +206,7 @@ namespace SpeedRave
                 (int)time.TotalHours, time.Minutes, time.Seconds, time.Milliseconds / 10);
         }
 
-        private async Task ReadLoopAsync(NetworkStream netStream, CancellationToken ct)
+        private async Task ReadLoopAsync(NetworkStream netStream, CancellationToken ct, int generation)
         {
             byte[] buffer = new byte[1024];
             try
@@ -214,7 +219,13 @@ namespace SpeedRave
             }
             catch
             {
-                // Ignored - stream closed or canceled on disconnect
+                // Stream closed or canceled on disconnect
+            }
+
+            if (!ct.IsCancellationRequested)
+            {
+                // LiveSplit closed the connection. Disconnect on the main thread (see Update).
+                closedGeneration = generation;
             }
         }
 
@@ -356,6 +367,12 @@ namespace SpeedRave
 
         public void Update()
         {
+            if (IsConnectedToLivesplit && closedGeneration == connectionGeneration)
+            {
+                Debug.Log("[SpeedRave] LiveSplit closed the connection.");
+                Disconnect();
+            }
+
             if (Plugin.AutosplitterEnabled.Value && Plugin.LiveSplitAutoReconnect.Value && !IsConnectedToLivesplit && !isConnecting)
             {
                 if (Time.unscaledTime - lastReconnectAttempt >= ReconnectInterval)
