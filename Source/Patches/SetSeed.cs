@@ -9,6 +9,7 @@ namespace SpeedRave.Patches
     {
         public static int Seed;
         public static int lastRandomSeed = 0;
+        public static bool hasLastRandomSeed = false;
         public static bool randomSeed = true;
 
         public static GameObject seedText;
@@ -88,6 +89,7 @@ namespace SpeedRave.Patches
                     Seed = newSeed;
                     Debug.Log($"[SpeedRave] Seed set to {Seed}");
                     lastRandomSeed = Seed;
+                    hasLastRandomSeed = true;
                     
                     StoreState();
                     Random.InitState(Seed);

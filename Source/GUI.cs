@@ -521,7 +521,7 @@ namespace SpeedRave
                 }
                 if (GUILayout.Button("Last Random"))
                 {
-                    if (Patches.SetSeedPatchs.lastRandomSeed != 0)
+                    if (Patches.SetSeedPatchs.hasLastRandomSeed)
                     {
                         Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
                         Patches.SetSeedPatchs.randomSeed = false;
