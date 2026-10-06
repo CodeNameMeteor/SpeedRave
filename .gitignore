@@ -4,3 +4,6 @@ Source/bin/*
 Source/obj/*
 *.7z
 *.csproj.user
+Tests/**/bin/
+Tests/**/obj/
+Tests/CompileCheck/bepinex/

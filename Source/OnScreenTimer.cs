@@ -43,7 +43,8 @@ namespace SpeedRave
             if (centiseconds != cachedCentiseconds)
             {
                 cachedCentiseconds = centiseconds;
-                cachedTimeText = FormatTime(elapsed);
+                // Formats straight from the TimeSpan (see Core.TimeFormat).
+                cachedTimeText = Core.TimeFormat.Timer(elapsed);
             }
             return cachedTimeText;
         }
@@ -76,13 +77,9 @@ namespace SpeedRave
             // HandleEnding) so the on-screen timer and LiveSplit always agree.
         }
 
-        // The only scenes that end (or, with All Endings, split) a run. Both LiveSplit and the on-screen
-        // timer use this one list so they always stop on the same event.
         public static bool IsEndingScene(string sceneLower)
         {
-            return sceneLower == "plaguending" ||
-                   sceneLower == "spaceending" ||
-                   sceneLower == "truending";
+            return Core.EndingScenes.IsEnding(sceneLower);
         }
 
         private void OnDestroy()
@@ -280,20 +277,6 @@ namespace SpeedRave
             if (c == '.') return DotString;
             if (c == ' ') return SpaceString;
             return c.ToString();
-        }
-
-        // Formats straight from the TimeSpan. TimeSpan.FromSeconds(float) rounds to the nearest millisecond,
-        // which combined with separately truncated hundredths could briefly show a time ~1s ahead.
-        private string FormatTime(TimeSpan ts)
-        {
-            if (ts < TimeSpan.Zero) ts = TimeSpan.Zero;
-            int hundredths = ts.Milliseconds / 10;
-
-            if (ts.TotalHours >= 1)
-            {
-                return string.Format("{0}:{1:D2}:{2:D2}.{3:D2}", (int)ts.TotalHours, ts.Minutes, ts.Seconds, hundredths);
-            }
-            return string.Format("{0:D2}:{1:D2}.{2:D2}", ts.Minutes, ts.Seconds, hundredths);
         }
     }
 }

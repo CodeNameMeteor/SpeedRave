@@ -96,6 +96,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoSplitter.cs" />
+    <Compile Include="Core\EndingScenes.cs" />
+    <Compile Include="Core\SeedGenerator.cs" />
+    <Compile Include="Core\TimeFormat.cs" />
     <Compile Include="InventoryOverlay.cs" />
     <Compile Include="KeyBinds.cs" />
     <Compile Include="OnScreenTimer.cs" />

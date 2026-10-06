@@ -22,3 +22,8 @@
 * Start The Game once
 * Extract SpeedRave.zip to ``<game folder>/SewerRaveWindows/BepInEx``
 * To Edit the config go to ``<game folder>/SewerRaveWindows/BepInEx/config`` and edit ``SpeedRave.cfg``.
+
+# Building and testing
+* Build `Source/SpeedRave.sln` in Visual Studio. If the game isn't in the default Steam folder, copy `Source/SpeedRave.csproj.user.example` to `Source/SpeedRave.csproj.user` and set `GameDir`.
+* `dotnet test Tests/SpeedRave.Tests` runs the unit tests (no game needed).
+* `Tests/CompileCheck` compiles the whole mod against stand-ins for the game's types, so CI can catch build errors without the game. CI downloads BepInEx for it; locally, extract a BepInEx 5 x64 zip into `Tests/CompileCheck/bepinex` and run `dotnet build Tests/CompileCheck`.

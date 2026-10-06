@@ -1,6 +1,5 @@
 using BepInEx;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -202,8 +201,7 @@ namespace SpeedRave
         // LiveSplit Server accepts h:mm:ss.ff for setgametime.
         private static string FormatLiveSplitTime(TimeSpan time)
         {
-            return string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}:{2:00}.{3:00}",
-                (int)time.TotalHours, time.Minutes, time.Seconds, time.Milliseconds / 10);
+            return Core.TimeFormat.LiveSplit(time);
         }
 
         private async Task ReadLoopAsync(NetworkStream netStream, CancellationToken ct, int generation)
