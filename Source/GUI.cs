@@ -565,7 +565,7 @@ namespace SpeedRave
             // Run Controls
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.BeginHorizontal();
-            string restartBindDisplay = string.IsNullOrEmpty(Plugin.RestartBind.Value) ? "UNBOUND" : Plugin.RestartBind.Value.ToUpperInvariant();
+            string restartBindDisplay = BindLabel(Plugin.RestartBind);
             if (GUILayout.Button($"Instant Restart ({restartBindDisplay})"))
             {
                 TriggerInstantRestart();
@@ -596,7 +596,7 @@ namespace SpeedRave
                 GUILayout.Label("<b>Room Lock</b>");
                 string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
                 GUILayout.Label($"Status: {lockStatus}");
-                if (GUILayout.Button(locked ? $"Unlock ({Plugin.LockBind.Value.ToUpperInvariant()})" : $"Lock ({Plugin.LockBind.Value.ToUpperInvariant()})"))
+                if (GUILayout.Button(locked ? $"Unlock ({BindLabel(Plugin.LockBind)})" : $"Lock ({BindLabel(Plugin.LockBind)})"))
                 {
                     ToggleSceneLock();
                 }
@@ -606,20 +606,20 @@ namespace SpeedRave
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Cheese ({Plugin.AddCheeseBind.Value.ToUpperInvariant()})")) ModifyCheese(1);
-                if (GUILayout.Button($"Sub Cheese ({Plugin.RemoveCheeseBind.Value.ToUpperInvariant()})")) ModifyCheese(-1);
+                if (GUILayout.Button($"Add Cheese ({BindLabel(Plugin.AddCheeseBind)})")) ModifyCheese(1);
+                if (GUILayout.Button($"Sub Cheese ({BindLabel(Plugin.RemoveCheeseBind)})")) ModifyCheese(-1);
                 GUILayout.EndHorizontal();
 
                 // Fruit Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Fruit ({Plugin.AddFruitBind.Value.ToUpperInvariant()})")) ModifyFruit(1);
-                if (GUILayout.Button($"Sub Fruit ({Plugin.RemoveFruitBind.Value.ToUpperInvariant()})")) ModifyFruit(-1);
+                if (GUILayout.Button($"Add Fruit ({BindLabel(Plugin.AddFruitBind)})")) ModifyFruit(1);
+                if (GUILayout.Button($"Sub Fruit ({BindLabel(Plugin.RemoveFruitBind)})")) ModifyFruit(-1);
                 GUILayout.EndHorizontal();
 
                 // Position Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Store Pos ({Plugin.StorePositionBind.Value.ToUpperInvariant()})")) StorePlayerPosition();
-                if (GUILayout.Button($"Restore Pos ({Plugin.RestorePositionBind.Value.ToUpperInvariant()})")) RestorePlayerPosition();
+                if (GUILayout.Button($"Store Pos ({BindLabel(Plugin.StorePositionBind)})")) StorePlayerPosition();
+                if (GUILayout.Button($"Restore Pos ({BindLabel(Plugin.RestorePositionBind)})")) RestorePlayerPosition();
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(5);
@@ -639,6 +639,13 @@ namespace SpeedRave
             GUILayout.EndHorizontal();
 
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        }
+
+        // Text shown for a bind on a button. Never throws, even for an empty or missing value.
+        private static string BindLabel(ConfigEntry<string> bind)
+        {
+            string value = bind?.Value;
+            return string.IsNullOrWhiteSpace(value) ? "UNBOUND" : value.Trim().ToUpperInvariant();
         }
 
         private void ToggleSceneLock()
