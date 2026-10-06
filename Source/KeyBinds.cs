@@ -10,6 +10,10 @@ namespace SpeedRave
     {
         private static readonly Dictionary<string, KeyCode> cache = new Dictionary<string, KeyCode>();
 
+        // Where warnings about invalid bind names go. Plugin points this at the BepInEx log; it is a delegate so
+        // this file has no BepInEx dependency and can be unit tested on its own.
+        public static Action<string> WarningSink = message => Debug.LogWarning("[SpeedRave] " + message);
+
         // Unity input names that don't match a KeyCode name once spaces are removed.
         private static readonly Dictionary<string, KeyCode> aliases = new Dictionary<string, KeyCode>(StringComparer.OrdinalIgnoreCase)
         {
@@ -79,7 +83,7 @@ namespace SpeedRave
 
             if (!TryParse(bind, out key))
             {
-                Debug.LogWarning($"[SpeedRave] '{bind}' is not a valid key name; that bind is ignored.");
+                WarningSink?.Invoke($"'{bind}' is not a valid key name; that bind is ignored.");
             }
             cache[bind] = key;
             return key;

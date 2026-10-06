@@ -817,7 +817,7 @@ namespace SpeedRave
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[SpeedRave] Could not clear save data on restart: {ex.Message}");
+                Log.Error($"Could not clear save data on restart: {ex.Message}");
             }
             finally
             {

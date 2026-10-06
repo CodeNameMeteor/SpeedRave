@@ -75,7 +75,7 @@ namespace SpeedRave
                 {
                     if (Plugin.Debug.Value)
                     {
-                        Debug.Log("[SpeedRave] FoodControl missing! Sideloading Sewer_Start...");
+                        Log.Info("FoodControl missing! Sideloading Sewer_Start...");
                     }
                     // Load Sewer_Start additively so we don't leave the current room. Only one at a time.
                     sideloadPending = true;
@@ -143,7 +143,7 @@ namespace SpeedRave
 
             if (Plugin.Debug.Value)
             {
-                Debug.Log("[SpeedRave] References Refreshed");
+                Log.Info("References Refreshed");
             }
         }
         private static void CleanUpSideloadedScene(Scene scene)
@@ -166,7 +166,7 @@ namespace SpeedRave
             }
             if (Plugin.Debug.Value)
             {
-                Debug.Log("[SpeedRave] Sewer_Start logic side-loaded and visuals suppressed.");
+                Log.Info("Sewer_Start logic side-loaded and visuals suppressed.");
             }
         }
     }

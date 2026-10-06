@@ -153,7 +153,7 @@ namespace SpeedRave
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[SpeedRave] Failed to load texture {filename}: {e.Message}");
+                    Log.Error($"Failed to load texture {filename}: {e.Message}");
                 }
             }
             return null;

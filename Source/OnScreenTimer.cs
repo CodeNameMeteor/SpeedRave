@@ -102,7 +102,7 @@ namespace SpeedRave
                      && Time.realtimeSinceStartup - RunState.LoadingStartedAt > FalsePauseTimeout)
             {
                 float pausedFor = Time.realtimeSinceStartup - RunState.LoadingStartedAt;
-                Debug.LogWarning($"[SpeedRave] Timer was paused for {pausedFor:F1}s without a room load; resuming and adding the time back.");
+                Log.Warning($"Timer was paused for {pausedFor:F1}s without a room load; resuming and adding the time back.");
                 RunState.EndLoading();
                 correction += TimeSpan.FromSeconds(pausedFor);
                 ResumeTimer();

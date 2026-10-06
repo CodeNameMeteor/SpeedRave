@@ -85,7 +85,7 @@ namespace SpeedRave.Patches
                     }
                     else
                     {
-                        Debug.LogError("SaveGame method not found!");
+                        Log.Error("SaveGame method not found!");
                     }
 
                     UnityEngine.Object.Destroy(__instance.gameObject);

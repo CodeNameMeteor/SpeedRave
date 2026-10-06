@@ -82,7 +82,7 @@ namespace SpeedRave.Patches
                 if (randomSeed)
                 {
                     Seed = Core.SeedGenerator.FromTicks(DateTime.Now.Ticks);
-                    Debug.Log($"[SpeedRave] Seed set to {Seed}");
+                    Log.Info($"Seed set to {Seed}");
                     lastRandomSeed = Seed;
                     hasLastRandomSeed = true;
                     

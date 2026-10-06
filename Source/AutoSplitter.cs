@@ -138,7 +138,7 @@ namespace SpeedRave
                 {
                     stream = client.GetStream();
                     IsConnectedToLivesplit = true;
-                    Debug.Log("[SpeedRave] Connected to LiveSplit!");
+                    Log.Info("Connected to LiveSplit!");
 
                     // Start background reader to drain LiveSplit responses. Capture the stream and token now:
                     // the lambda runs later on a thread-pool thread, when the fields may already be cleared or
@@ -155,7 +155,7 @@ namespace SpeedRave
             {
                 if (Plugin.Debug.Value)
                 {
-                    Debug.LogWarning($"[SpeedRave] Could not connect to LiveSplit: {ex.Message}");
+                    Log.Warning($"Could not connect to LiveSplit: {ex.Message}");
                 }
                 Disconnect(); 
             }
@@ -244,7 +244,7 @@ namespace SpeedRave
         {
             if (Plugin.Debug.Value)
             {
-                Debug.LogWarning($"[SpeedRave] Error while closing the LiveSplit connection: {ex.Message}");
+                Log.Warning($"Error while closing the LiveSplit connection: {ex.Message}");
             }
         }
 
@@ -302,7 +302,7 @@ namespace SpeedRave
             {
                 if (Plugin.Debug.Value)
                 {
-                    Debug.LogWarning($"[SpeedRave] Write to LiveSplit failed: {ex.Message}");
+                    Log.Warning($"Write to LiveSplit failed: {ex.Message}");
                 }
                 Disconnect();
             }
@@ -316,7 +316,7 @@ namespace SpeedRave
         {
             if (IsConnectedToLivesplit && closedGeneration == connectionGeneration)
             {
-                Debug.Log("[SpeedRave] LiveSplit closed the connection.");
+                Log.Info("LiveSplit closed the connection.");
                 Disconnect();
             }
 
@@ -448,7 +448,7 @@ namespace SpeedRave
             {
                 if (Plugin.Debug.Value)
                 {
-                    Debug.LogWarning($"[SpeedRave] Split for {reason} missed: not connected to LiveSplit.");
+                    Log.Warning($"Split for {reason} missed: not connected to LiveSplit.");
                 }
                 return;
             }

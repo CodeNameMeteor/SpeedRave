@@ -1,6 +1,5 @@
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Logging;
 using HarmonyLib;
 using SpeedRave.Patches;
 using UnityEngine;
@@ -20,7 +19,6 @@ namespace SpeedRave
 
         private static Plugin Instance;
 
-        internal ManualLogSource mls;
 
         // --- Config Entries ---
         public static ConfigEntry<bool> QuitToMenu;
@@ -86,7 +84,8 @@ namespace SpeedRave
             {
                 Instance = this;
             }
-            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
+            Log.Source = Logger;
+            KeyBinds.WarningSink = Log.Warning;
 
             // --- Binding Values ---
             QuitToMenu = Config.Bind("Patches", "Quit To Menu", true);
@@ -193,13 +192,13 @@ namespace SpeedRave
                 configDirty = false;
                 if (Plugin.Debug.Value)
                 {
-                    UnityEngine.Debug.Log("[SpeedRave] Configuration saved to disk.");
+                    Log.Info("Configuration saved to disk.");
                 }
                 return true;
             }
             catch (System.Exception ex)
             {
-                UnityEngine.Debug.LogError($"[SpeedRave] Error saving config: {ex.Message}");
+                Log.Error($"Error saving config: {ex.Message}");
                 return false;
             }
         }
