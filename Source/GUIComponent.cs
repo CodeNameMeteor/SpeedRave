@@ -112,7 +112,7 @@ namespace SpeedRave
             SceneWindowHeight
         );
 
-        public static bool locked = false;
+        public static bool sceneLocked = false;
 
         private Vector3 storedPosition;
         private Quaternion storedCharacterRot;
@@ -557,7 +557,7 @@ namespace SpeedRave
             if (Plugin.SeedEnabled.Value)
             {
                 GUILayout.Label("<b>Seed Control</b>");
-                GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
+                GUILayout.Label($"Current: {Patches.SetSeedPatches.Seed}");
                 seedInput = GUILayout.TextField(seedInput, 11);
 
                 GUILayout.BeginHorizontal();
@@ -565,23 +565,23 @@ namespace SpeedRave
                 {
                     if (int.TryParse(seedInput, out int parsedSeed))
                     {
-                        Patches.SetSeedPatchs.Seed = parsedSeed;
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = parsedSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                     }
                 }
                 if (GUILayout.Button("Last Random"))
                 {
-                    if (Patches.SetSeedPatchs.hasLastRandomSeed)
+                    if (Patches.SetSeedPatches.hasLastRandomSeed)
                     {
-                        Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = Patches.SetSeedPatches.lastRandomSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                     }
                 }
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Copy Seed"))
                 {
-                    GUIUtility.systemCopyBuffer = Patches.SetSeedPatchs.Seed.ToString();
+                    GUIUtility.systemCopyBuffer = Patches.SetSeedPatches.Seed.ToString();
                     seedFeedbackMessage = "✓ Seed copied to clipboard!";
                     seedFeedbackTime = Time.unscaledTime + 2.0f;
                 }
@@ -590,8 +590,8 @@ namespace SpeedRave
                     string clip = GUIUtility.systemCopyBuffer;
                     if (int.TryParse(clip, out int pastedSeed))
                     {
-                        Patches.SetSeedPatchs.Seed = pastedSeed;
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = pastedSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                         seedInput = pastedSeed.ToString();
                         seedFeedbackMessage = "✓ Seed pasted from clipboard!";
                         seedFeedbackTime = Time.unscaledTime + 2.0f;
@@ -609,7 +609,7 @@ namespace SpeedRave
                     GUILayout.Label($"<color=#55FF55><b>{seedFeedbackMessage}</b></color>");
                 }
 
-                Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
+                Patches.SetSeedPatches.randomSeed = GUILayout.Toggle(Patches.SetSeedPatches.randomSeed, " Use Random Seed");
             }
             
             // Run Controls
@@ -644,9 +644,9 @@ namespace SpeedRave
 
                 // Room Locking
                 GUILayout.Label("<b>Room Lock</b>");
-                string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
+                string lockStatus = sceneLocked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
                 GUILayout.Label($"Status: {lockStatus}");
-                if (GUILayout.Button(locked ? $"Unlock ({BindLabel(Plugin.LockBind)})" : $"Lock ({BindLabel(Plugin.LockBind)})"))
+                if (GUILayout.Button(sceneLocked ? $"Unlock ({BindLabel(Plugin.LockBind)})" : $"Lock ({BindLabel(Plugin.LockBind)})"))
                 {
                     ToggleSceneLock();
                 }
@@ -711,14 +711,14 @@ namespace SpeedRave
 
         private void ToggleSceneLock()
         {
-            if (!locked)
+            if (!sceneLocked)
             {
                 Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
-                locked = true;
+                sceneLocked = true;
             }
             else
             {
-                locked = false;
+                sceneLocked = false;
             }
         }
 
@@ -841,9 +841,9 @@ namespace SpeedRave
             {
                 // Always re-seed: a new seed in random mode, and a rewind of the seeded RNG stream to the
                 // same seed in set-seed mode (otherwise the stream continues from the previous attempt).
-                Patches.SetSeedPatchs.Init();
-                seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
-                seedFlashMode = Patches.SetSeedPatchs.randomSeed ? "Random Seed" : "Set Seed";
+                Patches.SetSeedPatches.Init();
+                seedFlashText = $"Seed: {Patches.SetSeedPatches.Seed}";
+                seedFlashMode = Patches.SetSeedPatches.randomSeed ? "Random Seed" : "Set Seed";
                 seedFlashTimer = Time.unscaledTime + Mathf.Clamp(Plugin.SeedFlashDuration.Value, 0.5f, 10f);
             }
 

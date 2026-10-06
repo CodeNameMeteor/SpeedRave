@@ -72,7 +72,7 @@ namespace SpeedRave
         // In your Plugin class
         public static ConfigEntry<int> TargetFPS;
 
-        public static ConfigEntry<bool> Debug;
+        public static ConfigEntry<bool> DebugMode;
 
 
 
@@ -137,7 +137,7 @@ namespace SpeedRave
 
             TargetFPS = Config.Bind("Performance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
             VSyncEnabled = Config.Bind("Performance", "VSyncEnabled", true, "Enable or disable V-Sync");
-            Debug = Config.Bind("Debug", "Debug", false, "Enable Debug");
+            DebugMode = Config.Bind("Debug", "Debug", false, "Enable Debug");
 
             // By default BepInEx rewrites the whole config file on every change, which happens every frame while
             // a Config UI slider is dragged. Save explicitly instead (Save button, closing the trainer, quitting).
@@ -161,8 +161,8 @@ namespace SpeedRave
             harmony.PatchAll(typeof(RemoveMusicPatch));
             harmony.PatchAll(typeof(TitlePatch));
             harmony.PatchAll(typeof(QuickStartPatch));
-            harmony.PatchAll(typeof(AutoSplitterPatchs));
-            harmony.PatchAll(typeof(SetSeedPatchs));
+            harmony.PatchAll(typeof(AutoSplitterPatches));
+            harmony.PatchAll(typeof(SetSeedPatches));
             harmony.PatchAll(typeof(SceneLock));
             harmony.PatchAll(typeof(CursorLockFix));
             harmony.PatchAll(typeof(BlockMovementWhileTyping));
@@ -190,7 +190,7 @@ namespace SpeedRave
             {
                 Instance?.Config?.Save();
                 configDirty = false;
-                if (Plugin.Debug.Value)
+                if (Plugin.DebugMode.Value)
                 {
                     Log.Info("Configuration saved to disk.");
                 }

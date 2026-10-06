@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace SpeedRave.Patches
 {
-    static class AutoSplitterPatchs
+    static class AutoSplitterPatches
     {
         private static readonly FieldInfo SelectPauseField = AccessTools.Field(typeof(TrainMapScript), "selectpause");
         private static readonly FieldInfo SelExitField = AccessTools.Field(typeof(TrainMapScript), "selExit");

@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 namespace SpeedRave.Patches
 {
-    static class SetSeedPatchs
+    static class SetSeedPatches
     {
         public static int Seed;
         public static int lastRandomSeed = 0;

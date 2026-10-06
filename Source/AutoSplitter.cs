@@ -153,7 +153,7 @@ namespace SpeedRave
             }
             catch (Exception ex)
             {
-                if (Plugin.Debug.Value)
+                if (Plugin.DebugMode.Value)
                 {
                     Log.Warning($"Could not connect to LiveSplit: {ex.Message}");
                 }
@@ -242,7 +242,7 @@ namespace SpeedRave
 
         private static void LogDisconnectError(Exception ex)
         {
-            if (Plugin.Debug.Value)
+            if (Plugin.DebugMode.Value)
             {
                 Log.Warning($"Error while closing the LiveSplit connection: {ex.Message}");
             }
@@ -300,7 +300,7 @@ namespace SpeedRave
             }
             catch (Exception ex)
             {
-                if (Plugin.Debug.Value)
+                if (Plugin.DebugMode.Value)
                 {
                     Log.Warning($"Write to LiveSplit failed: {ex.Message}");
                 }
@@ -446,7 +446,7 @@ namespace SpeedRave
         {
             if (!IsConnectedToLivesplit)
             {
-                if (Plugin.Debug.Value)
+                if (Plugin.DebugMode.Value)
                 {
                     Log.Warning($"Split for {reason} missed: not connected to LiveSplit.");
                 }
