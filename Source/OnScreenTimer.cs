@@ -31,27 +31,8 @@ namespace SpeedRave
             shadowStyle.normal.textColor = Color.black;
             shadowStyle.alignment = TextAnchor.MiddleCenter;
 
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-
-        private void OnDestroy()
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            string sceneName = scene.name;
-
-            if (sceneName == "Sewer_Start" && mode == LoadSceneMode.Single)
-            {
-                StartTimer();
-            }
-            else if (sceneName == "TitleScreen")
-            {
-                ResetTimer();
-            }
-            // Endings are handled by Autosplitter.HandleEnding, which decides whether the run is over.
+            // Starting, resetting and stopping the timer is driven by Autosplitter (StartRun, ResetRun,
+            // HandleEnding) so the on-screen timer and LiveSplit always agree.
         }
 
         public static bool IsEndingScene(string sceneLower)
