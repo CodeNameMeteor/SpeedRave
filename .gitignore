@@ -3,3 +3,4 @@ Source/.vs/*
 Source/bin/*
 Source/obj/*
 *.7z
+*.csproj.user
