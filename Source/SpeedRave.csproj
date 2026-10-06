@@ -104,6 +104,7 @@
     <Compile Include="OnScreenTimer.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="ReferenceManager.cs" />
+    <Compile Include="RunState.cs" />
     <Compile Include="Patches\AutoSplitter.cs" />
     <Compile Include="Patches\CursorLockFix.cs" />
     <Compile Include="Patches\QuickStart.cs" />

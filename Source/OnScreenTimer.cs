@@ -90,22 +90,21 @@ namespace SpeedRave
         private void Update()
         {
             // Resume when the first frame of gameplay actually executes in the new scene
-            if (IsRunActive && !IsEnded && Autosplitter.isLoading && Autosplitter.justLoadedScene)
+            if (IsRunActive && !IsEnded && RunState.IsLoading && RunState.LoadFinished)
             {
-                Autosplitter.justLoadedScene = false;
-                Autosplitter.isLoading = false;
+                RunState.EndLoading();
                 ResumeTimer();
                 if (Autosplitter.Instance != null)
                 {
                     Autosplitter.Instance.SendUnpauseGameTimeImmediate();
                 }
             }
-            else if (IsRunActive && !IsEnded && Autosplitter.isLoading && !Autosplitter.justLoadedScene
-                     && Time.realtimeSinceStartup - Autosplitter.LoadingStartedAt > FalsePauseTimeout)
+            else if (IsRunActive && !IsEnded && RunState.IsLoading && !RunState.LoadFinished
+                     && Time.realtimeSinceStartup - RunState.LoadingStartedAt > FalsePauseTimeout)
             {
-                float pausedFor = Time.realtimeSinceStartup - Autosplitter.LoadingStartedAt;
+                float pausedFor = Time.realtimeSinceStartup - RunState.LoadingStartedAt;
                 Debug.LogWarning($"[SpeedRave] Timer was paused for {pausedFor:F1}s without a room load; resuming and adding the time back.");
-                Autosplitter.isLoading = false;
+                RunState.EndLoading();
                 correction += TimeSpan.FromSeconds(pausedFor);
                 ResumeTimer();
                 if (Autosplitter.Instance != null)
@@ -202,7 +201,7 @@ namespace SpeedRave
             {
                 timerStyle.normal.textColor = new Color(0.2f, 1f, 0.5f);
             }
-            else if (Autosplitter.isLoading)
+            else if (RunState.IsLoading)
             {
                 timerStyle.normal.textColor = new Color(1f, 0.85f, 0.2f);
             }
@@ -250,7 +249,7 @@ namespace SpeedRave
         {
             if (!Plugin.ShowTimerStateText.Value) return;
 
-            string state = IsEnded ? "FINISHED" : Autosplitter.isLoading ? "LOADING" : null;
+            string state = IsEnded ? "FINISHED" : RunState.IsLoading ? "LOADING" : null;
             if (state == null) return;
 
             int fontSize = Mathf.Max(12, timerFontSize / 2);

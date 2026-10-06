@@ -13,19 +13,11 @@ namespace SpeedRave
     public class Autosplitter : MonoBehaviour
     {
         public bool debug = false;
-        public bool gameStarted = false;
-        public static bool isLoading = false;
-        public static bool justLoadedScene = false;
-        public static int endingCount = 0;
-        public static bool runFinished = false;
-        public static float LoadingStartedAt { get; private set; }
 
+        // Called by the trigger patches when a room change starts.
         public static void NotifyLoadingStarted()
         {
-            if (isLoading || runFinished) return;
-            isLoading = true;
-            justLoadedScene = false;
-            LoadingStartedAt = Time.realtimeSinceStartup;
+            if (!RunState.BeginLoading()) return;
             OnScreenTimer.PauseTimer();
             if (Instance != null)
             {
@@ -35,7 +27,7 @@ namespace SpeedRave
 
         public static void NotifyLoadingFinished()
         {
-            justLoadedScene = true;
+            RunState.MarkLoadFinished();
         }
 
         public bool gotResources = false;
@@ -46,10 +38,6 @@ namespace SpeedRave
         public bool gotBottlecap = false;
         public bool gotDuck = false;
         public bool gotKey = false;
-
-        public static bool plagueEnding = false;
-        public static bool spaceEnding = false;
-        public static bool trueEnding = false;
 
         // Networking
         public bool IsConnectedToLivesplit { get; private set; } = false;
@@ -100,7 +88,7 @@ namespace SpeedRave
 
             // Only start a run when none is in progress. Instant Restart and the title screen reset the run
             // first; loading Sewer_Start mid-run (level loader, Room Lock) must not reset LiveSplit.
-            if (scene.name == "Sewer_Start" && mode == LoadSceneMode.Single && !gameStarted)
+            if (scene.name == "Sewer_Start" && mode == LoadSceneMode.Single && !RunState.InProgress)
             {
                 StartRun();
             }
@@ -108,13 +96,13 @@ namespace SpeedRave
             {
                 ResetRun();
             }
-            else if (gameStarted && OnScreenTimer.IsEndingScene(sceneLower))
+            else if (RunState.InProgress && OnScreenTimer.IsEndingScene(sceneLower))
             {
                 HandleEnding(sceneLower);
             }
             else
             {
-                justLoadedScene = true;
+                RunState.MarkLoadFinished();
             }
         }
 
@@ -185,10 +173,10 @@ namespace SpeedRave
         // on-screen timer and the current loading state instead.
         private void SyncRunStateAfterConnect()
         {
-            if (!gameStarted || runFinished) return;
+            if (!RunState.InProgress || RunState.Finished) return;
 
             AttemptSendCommand("setgametime " + FormatLiveSplitTime(OnScreenTimer.Elapsed));
-            if (isLoading)
+            if (RunState.IsLoading)
             {
                 SendPauseGameTimeImmediate();
             }
@@ -357,11 +345,9 @@ namespace SpeedRave
             AttemptSendCommand("starttimer");
             AttemptSendCommand("initgametime");
 
-            ResetRunFlags();
+            ResetSplitFlags();
             timerPaused = false;
-            isLoading = false;
-            justLoadedScene = false;
-            gameStarted = true;
+            RunState.Start();
             OnScreenTimer.StartTimer();
         }
 
@@ -369,46 +355,26 @@ namespace SpeedRave
         {
             AttemptSendCommand("reset");
             //AttemptSendCommand("setgametime 0");
-            ResetRunFlags();
+            ResetSplitFlags();
             timerPaused = false;
-            isLoading = false;
-            justLoadedScene = false;
-            gameStarted = false;
+            RunState.Reset();
             OnScreenTimer.ResetTimer();
         }
 
         public void HandleEnding(string sceneLower)
         {
-            if (!gameStarted || runFinished) return;
+            if (!RunState.InProgress || RunState.Finished) return;
 
-            bool shouldSplit = false;
-            if (sceneLower == "plaguending" && !plagueEnding)
-            {
-                plagueEnding = true;
-                shouldSplit = true;
-            }
-            else if (sceneLower == "spaceending" && !spaceEnding)
-            {
-                spaceEnding = true;
-                shouldSplit = true;
-            }
-            else if (sceneLower == "truending" && !trueEnding)
-            {
-                trueEnding = true;
-                shouldSplit = true;
-            }
-
-            if (!shouldSplit)
+            if (!RunState.RecordEnding(sceneLower))
             {
                 // An ending that was already split: treat it like any other room so the loading pause ends.
-                justLoadedScene = true;
+                RunState.MarkLoadFinished();
                 return;
             }
 
-            endingCount++;
             AttemptSendCommand("split");
 
-            bool runComplete = !Plugin.AllEndings.Value || (plagueEnding && spaceEnding && trueEnding);
+            bool runComplete = !Plugin.AllEndings.Value || RunState.AllEndingsReached;
             if (runComplete)
             {
                 FinishRun();
@@ -416,17 +382,15 @@ namespace SpeedRave
             else
             {
                 // More endings to go: the run continues, so let the loading pause end as for a normal room.
-                justLoadedScene = true;
+                RunState.MarkLoadFinished();
             }
         }
 
         // Ends the run: both timers stop and stay stopped until the next reset or start.
         private void FinishRun()
         {
-            runFinished = true;
+            RunState.Finish();
             OnScreenTimer.StopTimer();
-            isLoading = false;
-            justLoadedScene = false;
             SendPauseGameTimeImmediate();
         }
 
@@ -435,7 +399,7 @@ namespace SpeedRave
             string currentScene = currentSceneName;
 
             // Split Logic
-            if (gameStarted && !runFinished && ReferenceManager.ActiveFoodControl != null)
+            if (RunState.InProgress && !RunState.Finished && ReferenceManager.ActiveFoodControl != null)
             {
                 var playerFood = ReferenceManager.ActiveFoodControl;
 
@@ -468,15 +432,15 @@ namespace SpeedRave
             }
 
             // Loading Logic (once the run is finished, game time stays paused)
-            if (runFinished)
+            if (RunState.Finished)
             {
                 return;
             }
-            if (isLoading && !timerPaused)
+            if (RunState.IsLoading && !timerPaused)
             {
                 SendPauseGameTimeImmediate();
             }
-            else if (timerPaused && (!isLoading || currentScene == "TitleScreen"))
+            else if (timerPaused && (!RunState.IsLoading || currentScene == "TitleScreen"))
             {
                 SendUnpauseGameTimeImmediate();
             }
@@ -496,7 +460,7 @@ namespace SpeedRave
             AttemptSendCommand("split");
         }
 
-        private void ResetRunFlags()
+        private void ResetSplitFlags()
         {
             gotBottlecap = false;
             gotFruit = false;
@@ -506,11 +470,6 @@ namespace SpeedRave
             gotPyramid = false;
             gotKey = false;
             gotDuck = false;
-            plagueEnding = false;
-            spaceEnding = false;
-            trueEnding = false;
-            endingCount = 0;
-            runFinished = false;
         }
 
         public void OnApplicationQuit()
