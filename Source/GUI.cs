@@ -149,7 +149,7 @@ namespace SpeedRave
 
         private void Update()
         {
-            if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value))
+            if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value) || SafeGetKeyDown(Plugin.OpenTrainerAltBind.Value))
             {
                 showGUI = !showGUI;
                 GUIUtility.keyboardControl = 0;
@@ -172,7 +172,7 @@ namespace SpeedRave
                 return;
             }
 
-            if (SafeGetKeyDown(Plugin.RestartBind.Value))
+            if (SafeGetKeyDown(Plugin.RestartBind.Value) || SafeGetKeyDown(Plugin.RestartAltBind.Value))
             {
                 TriggerInstantRestart();
             }
@@ -422,6 +422,7 @@ namespace SpeedRave
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.Space(10);
             BindField("Restart Run Bind:", Plugin.RestartBind);
+            BindField("Restart Run Alt Bind (e.g. joystick button 7):", Plugin.RestartAltBind);
 
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
@@ -436,6 +437,7 @@ namespace SpeedRave
             BindField("Store Position Bind:", Plugin.StorePositionBind);
             BindField("Restore Position Bind:", Plugin.RestorePositionBind);
             BindField("Open Trainer Bind:", Plugin.OpenTrainerBind);
+            BindField("Open Trainer Alt Bind (e.g. joystick button 6):", Plugin.OpenTrainerAltBind);
             BindField("Increment Scene Bind:", Plugin.IncrementSceneBind);
             BindField("Decrement Scene Bind:", Plugin.DecrementSceneBind);
 

@@ -49,6 +49,8 @@ namespace SpeedRave
         public static ConfigEntry<string> IncrementSceneBind;
         public static ConfigEntry<string> DecrementSceneBind;
         public static ConfigEntry<string> RestartBind;
+        public static ConfigEntry<string> OpenTrainerAltBind;
+        public static ConfigEntry<string> RestartAltBind;
 
         public static ConfigEntry<bool> LiveSplitAutoReconnect;
 
@@ -112,6 +114,8 @@ namespace SpeedRave
             IncrementSceneBind = Config.Bind("Binds", "Increment Scene Bind", "J");
             DecrementSceneBind = Config.Bind("Binds", "Decrement Scene Bind", "K");
             RestartBind = Config.Bind("Binds", "Restart Run Bind", "F6", "Instant restart run hotkey");
+            OpenTrainerAltBind = Config.Bind("Binds", "Open Trainer Alt Bind", "", "Optional second key or controller button for opening the trainer, e.g. \"joystick button 6\". Empty = unbound.");
+            RestartAltBind = Config.Bind("Binds", "Restart Run Alt Bind", "", "Optional second key or controller button for Instant Restart, e.g. \"joystick button 7\". Empty = unbound.");
 
             LiveSplitAutoReconnect = Config.Bind("AutoSplitter", "Auto Reconnect LiveSplit", false, "Periodically retry connecting to LiveSplit in the background");
 
