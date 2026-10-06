@@ -142,11 +142,18 @@ namespace SpeedRave
             {
                 return Input.GetKeyDown(bind.Trim().ToLowerInvariant());
             }
-            catch
+            catch (ArgumentException)
             {
+                // Unknown key name. Warn once per name rather than every frame.
+                if (reportedInvalidBinds.Add(bind))
+                {
+                    Debug.LogWarning($"[SpeedRave] '{bind}' is not a valid key name; that bind is ignored.");
+                }
                 return false;
             }
         }
+
+        private static readonly HashSet<string> reportedInvalidBinds = new HashSet<string>();
 
         private void Start()
         {

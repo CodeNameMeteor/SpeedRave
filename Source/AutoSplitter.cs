@@ -241,7 +241,7 @@ namespace SpeedRave
                 netCts?.Cancel();
                 netCts?.Dispose();
             }
-            catch { }
+            catch (Exception ex) { LogDisconnectError(ex); }
             netCts = null;
 
             try
@@ -249,7 +249,7 @@ namespace SpeedRave
                 stream?.Close();
                 stream?.Dispose();
             }
-            catch { }
+            catch (Exception ex) { LogDisconnectError(ex); }
             stream = null;
 
             try
@@ -257,12 +257,20 @@ namespace SpeedRave
                 client?.Close();
                 client?.Dispose();
             }
-            catch { }
+            catch (Exception ex) { LogDisconnectError(ex); }
             client = null;
 
             // Clear send queue
             while (sendQueue.TryDequeue(out _)) { }
             isSending = false;
+        }
+
+        private static void LogDisconnectError(Exception ex)
+        {
+            if (Plugin.Debug.Value)
+            {
+                Debug.LogWarning($"[SpeedRave] Error while closing the LiveSplit connection: {ex.Message}");
+            }
         }
 
         public void AttemptSendCommand(string command)
