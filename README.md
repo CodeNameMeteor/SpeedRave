@@ -3,7 +3,7 @@
 
 # Features
  * Trainer including Room Picker. press ``insert`` in game
- * Autosplitter. Start TCP Server in Livesplit
+ * Autosplitter. Start TCP Server in Livesplit (LiveSplit Server on its default port, 16834). The mod only connects to LiveSplit on this computer (127.0.0.1), so a firewall only needs to allow local connections on that port.
  * Inventory Overlay
  * Modified Seed Generation Allowing For Set Seed Runs (Thanks To <a href="https://github.com/Som1Lse">Som1Lse</a>)
    
