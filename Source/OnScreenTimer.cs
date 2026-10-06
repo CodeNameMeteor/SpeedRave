@@ -88,14 +88,18 @@ namespace SpeedRave
 
         private void Update()
         {
-            // Resume when the first frame of gameplay actually executes in the new scene
-            if (IsRunActive && !IsEnded && RunState.IsLoading && RunState.LoadFinished)
+            // Resume when the first frame of gameplay actually executes in the new scene. The loading pause
+            // ends even outside a run (practice), so it can't linger until the next run starts.
+            if (RunState.IsLoading && RunState.LoadFinished)
             {
                 RunState.EndLoading();
-                ResumeTimer();
-                if (Autosplitter.Instance != null)
+                if (IsRunActive && !IsEnded)
                 {
-                    Autosplitter.Instance.SendUnpauseGameTimeImmediate();
+                    ResumeTimer();
+                    if (Autosplitter.Instance != null)
+                    {
+                        Autosplitter.Instance.SendUnpauseGameTimeImmediate();
+                    }
                 }
             }
             else if (IsRunActive && !IsEnded && RunState.IsLoading && !RunState.LoadFinished
