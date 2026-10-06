@@ -10,13 +10,25 @@ namespace SpeedRave.Patches
         private static readonly FieldInfo CursorIsLockedField = AccessTools.Field(typeof(MouseLook), "m_cursorIsLocked");
         private static bool wasGuiShown = false;
 
+        // Cursor state from just before the trainer opened, restored when it closes. Forcing a lock on close
+        // would hide the cursor while a game menu (e.g. the inventory) that needs it is open.
+        private static bool previousCursorIsLocked = true;
+        private static CursorLockMode previousLockState = CursorLockMode.Locked;
+        private static bool previousCursorVisible = false;
+
         [HarmonyPatch(typeof(MouseLook), "InternalLockUpdate")]
         [HarmonyPrefix]
         static bool InternalLockUpdatePatch(MouseLook __instance)
         {
             if (GUIComponent.showGUI)
             {
-                wasGuiShown = true;
+                if (!wasGuiShown)
+                {
+                    wasGuiShown = true;
+                    previousCursorIsLocked = CursorIsLockedField?.GetValue(__instance) as bool? ?? true;
+                    previousLockState = Cursor.lockState;
+                    previousCursorVisible = Cursor.visible;
+                }
                 CursorIsLockedField?.SetValue(__instance, false);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -26,9 +38,9 @@ namespace SpeedRave.Patches
             if (wasGuiShown)
             {
                 wasGuiShown = false;
-                CursorIsLockedField?.SetValue(__instance, true);
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                CursorIsLockedField?.SetValue(__instance, previousCursorIsLocked);
+                Cursor.lockState = previousLockState;
+                Cursor.visible = previousCursorVisible;
             }
 
             return true;
