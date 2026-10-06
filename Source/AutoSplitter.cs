@@ -20,12 +20,14 @@ namespace SpeedRave
         public static bool justLoadedScene = false;
         public static int endingCount = 0;
         public static bool runFinished = false;
+        public static float LoadingStartedAt { get; private set; }
 
         public static void NotifyLoadingStarted()
         {
             if (isLoading || runFinished) return;
             isLoading = true;
             justLoadedScene = false;
+            LoadingStartedAt = Time.realtimeSinceStartup;
             OnScreenTimer.PauseTimer();
             if (Instance != null)
             {
@@ -265,6 +267,14 @@ namespace SpeedRave
             {
                 Disconnect();
             }
+        }
+
+        // A loading pause turned out to have no load behind it (see OnScreenTimer.Update): resume LiveSplit
+        // game time and give back the time it was wrongly paused for.
+        public void ResumeAfterFalsePause()
+        {
+            SendUnpauseGameTimeImmediate();
+            AttemptSendCommand("setgametime " + FormatLiveSplitTime(OnScreenTimer.Elapsed));
         }
 
         public void SendUnpauseGameTimeImmediate()

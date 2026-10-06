@@ -7,8 +7,14 @@ namespace SpeedRave
     public class OnScreenTimer : MonoBehaviour
     {
         private static readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-        public static float CurrentTime => (float)stopwatch.Elapsed.TotalSeconds;
-        public static TimeSpan Elapsed => stopwatch.Elapsed;
+        // Time added back after a loading pause that had no load behind it.
+        private static TimeSpan correction = TimeSpan.Zero;
+        public static float CurrentTime => (float)Elapsed.TotalSeconds;
+        public static TimeSpan Elapsed => stopwatch.Elapsed + correction;
+
+        // A trigger pauses the timer before the game loads the next room. If no room load follows within
+        // this many seconds (for example a door that refused to open), the pause is treated as false.
+        private const float FalsePauseTimeout = 15f;
         public static bool IsRunning { get; private set; } = false;
         public static bool IsRunActive { get; private set; } = false;
         public static bool IsEnded { get; private set; } = false;
@@ -59,10 +65,24 @@ namespace SpeedRave
                     Autosplitter.Instance.SendUnpauseGameTimeImmediate();
                 }
             }
+            else if (IsRunActive && !IsEnded && Autosplitter.isLoading && !Autosplitter.justLoadedScene
+                     && Time.realtimeSinceStartup - Autosplitter.LoadingStartedAt > FalsePauseTimeout)
+            {
+                float pausedFor = Time.realtimeSinceStartup - Autosplitter.LoadingStartedAt;
+                Debug.LogWarning($"[SpeedRave] Timer was paused for {pausedFor:F1}s without a room load; resuming and adding the time back.");
+                Autosplitter.isLoading = false;
+                correction += TimeSpan.FromSeconds(pausedFor);
+                ResumeTimer();
+                if (Autosplitter.Instance != null)
+                {
+                    Autosplitter.Instance.ResumeAfterFalsePause();
+                }
+            }
         }
 
         public static void StartTimer()
         {
+            correction = TimeSpan.Zero;
             stopwatch.Restart();
             IsRunActive = true;
             IsRunning = true;
@@ -100,6 +120,7 @@ namespace SpeedRave
 
         public static void ResetTimer()
         {
+            correction = TimeSpan.Zero;
             stopwatch.Reset();
             IsRunActive = false;
             IsRunning = false;
