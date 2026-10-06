@@ -337,10 +337,9 @@ namespace SpeedRave
                 }
             }
 
-            if (IsConnectedToLivesplit || debug)
-            {
-                UpdateAutosplitter();
-            }
+            // Always evaluated, even while disconnected, so split flags track the game. Otherwise every split
+            // that became due during a disconnect would fire in a burst when the connection returns.
+            UpdateAutosplitter();
         }
 
         public void StartRun()
@@ -434,48 +433,36 @@ namespace SpeedRave
         {
             string currentScene = currentSceneName;
 
-            // Fallback reset if on TitleScreen
-            if (currentScene == "TitleScreen" && gameStarted)
-            {
-                ResetRun();
-            }
-
-            // Fallback start if Sewer_Start loaded before connect
-            if (currentScene == "Sewer_Start" && !gameStarted)
-            {
-                StartRun();
-            }
-
             // Split Logic
-            if (ReferenceManager.ActiveFoodControl != null)
+            if (gameStarted && !runFinished && ReferenceManager.ActiveFoodControl != null)
             {
                 var playerFood = ReferenceManager.ActiveFoodControl;
 
                 if (Plugin.TwentyResourceSplit.Value && !gotResources && (playerFood.cheese + playerFood.fruit >= 20))
                 {
-                    AttemptSendCommand("split");
+                    Split("20 resources");
                     gotResources = true;
                 }
 
                 if (Plugin.TwentyFruitSplit.Value && !gotFruit && playerFood.fruit >= 20)
                 {
-                    AttemptSendCommand("split");
+                    Split("20 fruit");
                     gotFruit = true;
                 }
 
                 if (Plugin.KeySplit.Value && !gotKey && playerFood.haveKey)
                 {
-                    AttemptSendCommand("split");
+                    Split("key");
                     gotKey = true;
                 }
 
                 if (Plugin.ItemSplit.Value)
                 {
-                    if (playerFood.hasBottlecap && !gotBottlecap) { AttemptSendCommand("split"); gotBottlecap = true; }
-                    if (playerFood.hasPyramid && !gotPyramid) { AttemptSendCommand("split"); gotPyramid = true; }
-                    if (playerFood.hasMug && !gotMug) { AttemptSendCommand("split"); gotMug = true; }
-                    if (playerFood.hasDuck && !gotDuck) { AttemptSendCommand("split"); gotDuck = true; }
-                    if (playerFood.hasPizza && !gotPizza) { AttemptSendCommand("split"); gotPizza = true; }
+                    if (playerFood.hasBottlecap && !gotBottlecap) { Split("bottlecap"); gotBottlecap = true; }
+                    if (playerFood.hasPyramid && !gotPyramid) { Split("pyramid"); gotPyramid = true; }
+                    if (playerFood.hasMug && !gotMug) { Split("mug"); gotMug = true; }
+                    if (playerFood.hasDuck && !gotDuck) { Split("duck"); gotDuck = true; }
+                    if (playerFood.hasPizza && !gotPizza) { Split("pizza"); gotPizza = true; }
                 }
             }
 
@@ -492,6 +479,20 @@ namespace SpeedRave
             {
                 SendUnpauseGameTimeImmediate();
             }
+        }
+
+        // Sends a split now, or records that it was missed while disconnected (it is not replayed later).
+        private void Split(string reason)
+        {
+            if (!IsConnectedToLivesplit)
+            {
+                if (Plugin.Debug.Value)
+                {
+                    Debug.LogWarning($"[SpeedRave] Split for {reason} missed: not connected to LiveSplit.");
+                }
+                return;
+            }
+            AttemptSendCommand("split");
         }
 
         private void ResetRunFlags()
