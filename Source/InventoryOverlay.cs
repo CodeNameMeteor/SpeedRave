@@ -39,8 +39,8 @@ namespace SpeedRave
         }
 
         private readonly List<ItemDef> allItems = new List<ItemDef>();
-        private readonly List<Texture> displayList = new List<Texture>();
-        private readonly List<Rect> displayUVs = new List<Rect>();
+        // Collected items in pickup order. Keyed by item, not texture: item sprites may share one atlas texture.
+        private readonly List<ItemDef> collectedItems = new List<ItemDef>();
 
         // Styles
         private GUIStyle textStyle;
@@ -246,24 +246,12 @@ namespace SpeedRave
                     if (hasItem && !item.isCollected)
                     {
                         item.isCollected = true;
-                        if (item.texture != null)
-                        {
-                            displayList.Add(item.texture);
-                            displayUVs.Add(item.uvRect);
-                        }
+                        collectedItems.Add(item);
                     }
                     else if (!hasItem && item.isCollected)
                     {
                         item.isCollected = false;
-                        if (item.texture != null)
-                        {
-                            int index = displayList.IndexOf(item.texture);
-                            if (index != -1)
-                            {
-                                displayList.RemoveAt(index);
-                                displayUVs.RemoveAt(index);
-                            }
-                        }
+                        collectedItems.Remove(item);
                     }
                 }
             }
@@ -303,10 +291,10 @@ namespace SpeedRave
             }
 
             float itemX = startX;
-            for (int i = 0; i < displayList.Count; i++)
+            for (int i = 0; i < collectedItems.Count; i++)
             {
-                Texture tex = displayList[i];
-                Rect uv = displayUVs[i];
+                Texture tex = collectedItems[i].texture;
+                Rect uv = collectedItems[i].uvRect;
 
                 if (tex != null)
                 {
