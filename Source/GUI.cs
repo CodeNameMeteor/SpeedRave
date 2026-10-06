@@ -681,6 +681,35 @@ namespace SpeedRave
             return 0;
         }
 
+        // Clears the game's save the same way the title screen does. Mid-run there is no TitleScreenControler
+        // in the scene, so a temporary inactive one is created just to call ClearSaveData(). This avoids
+        // PlayerPrefs.DeleteAll(), which would also wipe the game's settings and other mods' data.
+        private static void ClearGameSaveData()
+        {
+            var titleController = UnityEngine.Object.FindObjectOfType<TitleScreenControler>();
+            if (titleController != null)
+            {
+                titleController.ClearSaveData();
+                return;
+            }
+
+            // Inactive so that Awake/Start/Update never run on the temporary component.
+            var temp = new GameObject("SpeedRaveTempTitleController");
+            temp.SetActive(false);
+            try
+            {
+                temp.AddComponent<TitleScreenControler>().ClearSaveData();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SpeedRave] Could not clear save data on restart: {ex.Message}");
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(temp);
+            }
+        }
+
         public static void TriggerInstantRestart()
         {
             if (Autosplitter.Instance != null)
@@ -690,16 +719,7 @@ namespace SpeedRave
 
             if (Plugin.ClearSaveOnStart.Value)
             {
-                var titleController = UnityEngine.Object.FindObjectOfType<TitleScreenControler>();
-                if (titleController != null)
-                {
-                    titleController.ClearSaveData();
-                }
-                else
-                {
-                    PlayerPrefs.DeleteAll();
-                    PlayerPrefs.Save();
-                }
+                ClearGameSaveData();
             }
 
             if (Plugin.SeedEnabled.Value)
