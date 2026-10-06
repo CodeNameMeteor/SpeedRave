@@ -12,9 +12,17 @@ namespace SpeedRave
     {
         // Flags
         public static Font GameFont { get; private set; }
+
+        // The font the timer, overlay and seed flash draw with: the game's decorative font, or Unity's plain
+        // default font (null) when Use Game Font is off.
+        public static Font DisplayFont => Plugin.UseGameFont.Value ? GameFont : null;
         private bool fontFound = false;
         private float lastFontSearchTime = -10f;
         private const float FontSearchCooldown = 5f;
+        // Resources.FindObjectsOfTypeAll<Font>() walks every loaded font; give up after this many tries
+        // (about a minute) if the game font never turns up, and keep using the default font.
+        private const int MaxFontSearches = 12;
+        private int fontSearches = 0;
 
         // References
         private GameObject inventoryGO;
@@ -28,9 +36,8 @@ namespace SpeedRave
         // Data Structures
         private class ItemDef
         {
-            public string boolFieldName;
-            public string objectFieldName;
-            public FieldInfo boolField;
+            // Direct read of the FoodControl flag; these fields are public, so no per-frame reflection or boxing.
+            public Func<FoodControl, bool> hasItem;
             public FieldInfo objectField;
 
             public Texture texture;
@@ -39,8 +46,8 @@ namespace SpeedRave
         }
 
         private readonly List<ItemDef> allItems = new List<ItemDef>();
-        private readonly List<Texture> displayList = new List<Texture>();
-        private readonly List<Rect> displayUVs = new List<Rect>();
+        // Collected items in pickup order. Keyed by item, not texture: item sprites may share one atlas texture.
+        private readonly List<ItemDef> collectedItems = new List<ItemDef>();
 
         // Styles
         private GUIStyle textStyle;
@@ -61,7 +68,8 @@ namespace SpeedRave
             shadowStyle.alignment = TextAnchor.MiddleLeft;
             shadowStyle.richText = true;
 
-            texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "CustomTextures");
+            // BepInEx's own root path, rather than AppDomain.BaseDirectory, which depends on how the game was launched.
+            texturePath = Path.Combine(BepInEx.Paths.BepInExRootPath, "CustomTextures");
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
@@ -81,23 +89,22 @@ namespace SpeedRave
 
         private void Start()
         {
-            AddItemDef("haveKey", "key");
-            AddItemDef("hasDuck", "ducky");
-            AddItemDef("hasPizza", "pizza");
-            AddItemDef("hasMug", "mug");
-            AddItemDef("hasPyramid", "pyramid");
-            AddItemDef("hasBottlecap", "bottlecap");
+            AddItemDef(fc => fc.haveKey, "key");
+            AddItemDef(fc => fc.hasDuck, "ducky");
+            AddItemDef(fc => fc.hasPizza, "pizza");
+            AddItemDef(fc => fc.hasMug, "mug");
+            AddItemDef(fc => fc.hasPyramid, "pyramid");
+            AddItemDef(fc => fc.hasBottlecap, "bottlecap");
 
             AttemptFindFont();
         }
 
-        private void AddItemDef(string boolField, string objField)
+        private void AddItemDef(Func<FoodControl, bool> hasItem, string objField)
         {
             allItems.Add(new ItemDef
             {
-                boolFieldName = boolField,
-                objectFieldName = objField,
-                boolField = typeof(FoodControl).GetField(boolField),
+                hasItem = hasItem,
+                // Only read once while finding the item's sprite, so reflection is fine here.
                 objectField = typeof(FoodControl).GetField(objField)
             });
         }
@@ -113,7 +120,7 @@ namespace SpeedRave
             {
                 CheckInventoryState();
 
-                if (!fontFound && Time.unscaledTime - lastFontSearchTime > FontSearchCooldown)
+                if (!fontFound && fontSearches < MaxFontSearches && Time.unscaledTime - lastFontSearchTime > FontSearchCooldown)
                 {
                     AttemptFindFont();
                 }
@@ -146,7 +153,7 @@ namespace SpeedRave
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[SpeedRave] Failed to load texture {filename}: {e.Message}");
+                    Log.Error($"Failed to load texture {filename}: {e.Message}");
                 }
             }
             return null;
@@ -155,16 +162,15 @@ namespace SpeedRave
         private void AttemptFindFont()
         {
             lastFontSearchTime = Time.unscaledTime;
+            fontSearches++;
             Font[] allFonts = Resources.FindObjectsOfTypeAll<Font>();
 
             foreach (Font font in allFonts)
             {
                 if (font == null) continue;
-                string fName = font.name.ToLower();
+                string fName = font.name.ToLowerInvariant();
                 if (fName.Contains("autumn") || fName.Contains("larua"))
                 {
-                    textStyle.font = font;
-                    shadowStyle.font = font;
                     GameFont = font;
                     fontFound = true;
                     break;
@@ -239,32 +245,17 @@ namespace SpeedRave
 
             foreach (var item in allItems)
             {
-                if (item.boolField != null)
-                {
-                    bool hasItem = (bool)item.boolField.GetValue(foodControl);
+                bool hasItem = item.hasItem(foodControl);
 
-                    if (hasItem && !item.isCollected)
-                    {
-                        item.isCollected = true;
-                        if (item.texture != null)
-                        {
-                            displayList.Add(item.texture);
-                            displayUVs.Add(item.uvRect);
-                        }
-                    }
-                    else if (!hasItem && item.isCollected)
-                    {
-                        item.isCollected = false;
-                        if (item.texture != null)
-                        {
-                            int index = displayList.IndexOf(item.texture);
-                            if (index != -1)
-                            {
-                                displayList.RemoveAt(index);
-                                displayUVs.RemoveAt(index);
-                            }
-                        }
-                    }
+                if (hasItem && !item.isCollected)
+                {
+                    item.isCollected = true;
+                    collectedItems.Add(item);
+                }
+                else if (!hasItem && item.isCollected)
+                {
+                    item.isCollected = false;
+                    collectedItems.Remove(item);
                 }
             }
         }
@@ -273,6 +264,8 @@ namespace SpeedRave
         {
             if (!Plugin.InventoryOverlayEnabled.Value || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
+            textStyle.font = DisplayFont;
+            shadowStyle.font = DisplayFont;
             int targetFontSize = (int)Plugin.TextHeight.Value;
             textStyle.fontSize = targetFontSize;
             shadowStyle.fontSize = targetFontSize;
@@ -285,28 +278,28 @@ namespace SpeedRave
             if (canShowLogos)
             {
                 // Draw Fruit (Bottom row)
-                DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
+                DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), fruitText.Get(foodControl.fruit));
 
                 // Move Y up for the Cheese row
                 currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
 
-                DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), foodControl.cheese.ToString());
+                DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), cheeseText.Get(foodControl.cheese));
 
                 currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
             }
             else
             {
                 // Text-only fallback
-                string txt = $"Cheese: {foodControl.cheese}    Fruit: {foodControl.fruit}";
+                string txt = GetTextOnlyLine(foodControl.cheese, foodControl.fruit);
                 DrawTextWithShadow(startX, currentY, txt);
                 currentY -= Plugin.TextHeight.Value + Plugin.Padding.Value;
             }
 
             float itemX = startX;
-            for (int i = 0; i < displayList.Count; i++)
+            for (int i = 0; i < collectedItems.Count; i++)
             {
-                Texture tex = displayList[i];
-                Rect uv = displayUVs[i];
+                Texture tex = collectedItems[i].texture;
+                Rect uv = collectedItems[i].uvRect;
 
                 if (tex != null)
                 {
@@ -322,6 +315,40 @@ namespace SpeedRave
                     }
                 }
             }
+        }
+
+        // Number strings are only rebuilt when the value changes, so OnGUI doesn't allocate every frame.
+        private class CachedNumber
+        {
+            private int value = int.MinValue;
+            private string text = "";
+
+            public string Get(int newValue)
+            {
+                if (newValue != value)
+                {
+                    value = newValue;
+                    text = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                return text;
+            }
+        }
+
+        private readonly CachedNumber cheeseText = new CachedNumber();
+        private readonly CachedNumber fruitText = new CachedNumber();
+        private int lastLineCheese = int.MinValue;
+        private int lastLineFruit = int.MinValue;
+        private string cachedTextOnlyLine = "";
+
+        private string GetTextOnlyLine(int cheese, int fruit)
+        {
+            if (cheese != lastLineCheese || fruit != lastLineFruit)
+            {
+                lastLineCheese = cheese;
+                lastLineFruit = fruit;
+                cachedTextOnlyLine = $"Cheese: {cheese}    Fruit: {fruit}";
+            }
+            return cachedTextOnlyLine;
         }
 
         private void DrawRow(float x, float y, Texture icon, Rect uv, string countText)

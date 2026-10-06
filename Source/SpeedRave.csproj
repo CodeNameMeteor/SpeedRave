@@ -13,6 +13,10 @@
     <LangVersion>9.0</LangVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <!-- Folder containing "Sewer Rave_Data" and "BepInEx". Override it without editing this file, either in an
+         untracked SpeedRave.csproj.user next to this file (see SpeedRave.csproj.user.example) or with
+         msbuild /p:GameDir="D:\Games\Sewer Rave\SewerRaveWindows". -->
+    <GameDir Condition=" '$(GameDir)' == '' ">C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows</GameDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,17 +37,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(GameDir)\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(GameDir)\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -54,53 +58,60 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Sewer Rave\SewerRaveWindows\Sewer Rave_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(GameDir)\Sewer Rave_Data\Managed\UnityEngine.UIModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoSplitter.cs" />
+    <Compile Include="Core\EndingScenes.cs" />
+    <Compile Include="Core\SeedGenerator.cs" />
+    <Compile Include="Core\TimeFormat.cs" />
     <Compile Include="InventoryOverlay.cs" />
+    <Compile Include="KeyBinds.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="OnScreenTimer.cs" />
-    <Compile Include="GUI.cs" />
+    <Compile Include="GUIComponent.cs" />
     <Compile Include="ReferenceManager.cs" />
-    <Compile Include="Patches\AutoSplitter.cs" />
+    <Compile Include="RunState.cs" />
+    <Compile Include="Patches\AutoSplitterPatches.cs" />
     <Compile Include="Patches\CursorLockFix.cs" />
     <Compile Include="Patches\QuickStart.cs" />
     <Compile Include="Patches\SceneLock.cs" />
     <Compile Include="Patches\SetSeed.cs" />
+    <Compile Include="Patches\TypingInputBlock.cs" />
     <Compile Include="Patches\Title.cs" />
     <Compile Include="Patches\QuitToMenu.cs" />
     <Compile Include="Patches\RemoveMusic.cs" />

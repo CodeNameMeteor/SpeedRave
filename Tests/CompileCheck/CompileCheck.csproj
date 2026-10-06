@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the whole mod without the game installed, to catch build errors in CI.
+       The game's own types come from GameStubs.cs (signatures only). BepInEx and Harmony come from the
+       official BepInEx 5 release zip: pass its BepInEx/core folder as BepInExCoreDir. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Unassigned/unused fields are expected in the stubs. -->
+    <NoWarn>$(NoWarn);CS0169;CS0649;CS0414</NoWarn>
+    <BepInExCoreDir Condition=" '$(BepInExCoreDir)' == '' ">$(MSBuildThisFileDirectory)bepinex\BepInEx\core</BepInExCoreDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="GameStubs.cs" />
+    <Compile Include="..\..\Source\**\*.cs" Exclude="..\..\Source\obj\**;..\..\Source\bin\**" Link="Mod\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="BepInEx"><HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BepInExCoreDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

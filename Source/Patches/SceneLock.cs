@@ -1,9 +1,5 @@
 ﻿using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SpeedRave.Patches
 {
@@ -12,13 +8,12 @@ namespace SpeedRave.Patches
         public static String lockedScene;
         [HarmonyPatch(typeof(DoorBehavior), "OnTriggerEnter")]
         [HarmonyPrefix]
-        static bool DoorBehaviorOnTriggerEnterPatch(DoorBehavior __instance)
+        static void DoorBehaviorOnTriggerEnterPatch(DoorBehavior __instance)
         {
-           if(GUIComponent.locked)
+            if (GUIComponent.sceneLocked)
             {
                 __instance.sceneSelection = lockedScene;
             }
-            return true;
         }
     }
 }

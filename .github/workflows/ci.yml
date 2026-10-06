@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      BEPINEX_URL: https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.2/BepInEx_win_x64_5.4.23.2.zip
+      BEPINEX_SHA256: f752ce4e838f4c305b9da1404b6745f2cff23b8bfd494f79f0c84d0a01f59b46
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Unit tests
+        run: dotnet test Tests/SpeedRave.Tests --nologo
+
+      - name: Download BepInEx 5 (checksum-verified)
+        run: |
+          curl -sSL -o bepinex.zip "$BEPINEX_URL"
+          echo "$BEPINEX_SHA256  bepinex.zip" | sha256sum -c -
+          unzip -q bepinex.zip -d Tests/CompileCheck/bepinex
+
+      - name: Compile check (whole mod against game stubs)
+        run: dotnet build Tests/CompileCheck --nologo

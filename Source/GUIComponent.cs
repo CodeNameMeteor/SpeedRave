@@ -1,6 +1,6 @@
-using BepInEx;
-using SpeedRave.Patches;
+using BepInEx.Configuration;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -84,28 +84,37 @@ namespace SpeedRave
         public const int WIDTH = 275;
         public const int HEIGHT = 600;
         public static bool showGUI = false;
+
+        // True while a trainer text field has keyboard focus. Hotkeys, QuickStart and player movement are
+        // suppressed so typing a seed or a bind name doesn't trigger them.
+        public static bool IsTyping => showGUI && GUIUtility.keyboardControl != 0;
+
+        // Bind text that has been edited but not applied yet, so half-typed names never become live binds.
+        private readonly Dictionary<ConfigEntry<string>, string> pendingBinds = new Dictionary<ConfigEntry<string>, string>();
         public static bool sceneSelectorShowGUI = false;
 
         private static bool configShowGUI = false;
         private Vector2 configScroll = Vector2.zero;
         private Vector2 sceneScroll = Vector2.zero;
+        private Vector2 mainScroll = Vector2.zero;
 
-        private int sceneIndex = 0;
 
-        private const int MAIN_WINDOW_ID = 0;
-        private const int SCENE_WINDOW_ID = 1;
-        private const int CONFIG_WINDOW_ID = 2;
+        // IMGUI window IDs are global across every mod, so use distinctive values rather than 0/1/2, which other
+        // IMGUI mods commonly use too.
+        private const int MAIN_WINDOW_ID = 0x53524D01;
+        private const int SCENE_WINDOW_ID = 0x53524D02;
+        private const int CONFIG_WINDOW_ID = 0x53524D03;
 
-        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, 500);
+        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, ConfigWindowHeight);
         private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
         private static Rect sceneWinRect = new(
             winRect.x + winRect.width + 10,
             winRect.y,
-            1100,
-            350
+            SceneWindowWidth,
+            SceneWindowHeight
         );
 
-        public static bool locked = false;
+        public static bool sceneLocked = false;
 
         private Vector3 storedPosition;
         private Quaternion storedCharacterRot;
@@ -113,7 +122,6 @@ namespace SpeedRave
         private bool hasStoredPosition = false;
 
         private string seedInput = "";
-        private int parsedSeed = 0;
         private string fpsInput = "-1";
         private float saveFeedbackTime = 0f;
         private bool saveSuccess = false;
@@ -128,22 +136,25 @@ namespace SpeedRave
 
         private static bool SafeGetKeyDown(string bind)
         {
-            if (string.IsNullOrWhiteSpace(bind)) return false;
-            try
-            {
-                return Input.GetKeyDown(bind.Trim().ToLower());
-            }
-            catch
-            {
-                return false;
-            }
+            return KeyBinds.GetKeyDown(bind);
+        }
+
+        private void Start()
+        {
+            // Show the configured cap rather than a hard-coded -1.
+            fpsInput = Plugin.TargetFPS.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private void Update()
         {
-            if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value))
+            if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value) || SafeGetKeyDown(Plugin.OpenTrainerAltBind.Value))
             {
                 showGUI = !showGUI;
+                GUIUtility.keyboardControl = 0;
+                if (!showGUI)
+                {
+                    Plugin.SaveConfigIfChanged();
+                }
                 if (sceneSelectorShowGUI)
                 {
                     sceneSelectorShowGUI = false;
@@ -154,7 +165,12 @@ namespace SpeedRave
                 }
             }
 
-            if (SafeGetKeyDown(Plugin.RestartBind.Value))
+            if (IsTyping)
+            {
+                return;
+            }
+
+            if (SafeGetKeyDown(Plugin.RestartBind.Value) || SafeGetKeyDown(Plugin.RestartAltBind.Value))
             {
                 TriggerInstantRestart();
             }
@@ -174,15 +190,13 @@ namespace SpeedRave
 
                 if (SafeGetKeyDown(Plugin.IncrementSceneBind.Value))
                 {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex + 1) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                    int nextIndex = (GetCurrentSceneIndex() + 1) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[nextIndex]);
                 }
                 if (SafeGetKeyDown(Plugin.DecrementSceneBind.Value))
                 {
-                    sceneIndex = GetCurrentSceneIndex();
-                    sceneIndex = (sceneIndex - 1 + Scenes.Length) % Scenes.Length;
-                    SceneManager.LoadScene(Scenes[sceneIndex]);
+                    int previousIndex = (GetCurrentSceneIndex() - 1 + Scenes.Length) % Scenes.Length;
+                    SceneManager.LoadScene(Scenes[previousIndex]);
                 }
                 if (SafeGetKeyDown(Plugin.LockBind.Value))
                 {
@@ -213,6 +227,39 @@ namespace SpeedRave
 
         private void OnGUI()
         {
+            // Scale the trainer windows and seed flash by the UI Scale setting (for high- or low-DPI screens).
+            Matrix4x4 previousMatrix = GUI.matrix;
+            float scale = UiScale;
+            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+            try
+            {
+                DrawScaledGUI();
+            }
+            finally
+            {
+                GUI.matrix = previousMatrix;
+            }
+        }
+
+        private const float WindowMargin = 5f;
+        private const float SceneWindowWidth = 1100f;
+        private const float SceneWindowHeight = 350f;
+        private const float ConfigWindowHeight = 500f;
+        private static readonly string WindowTitle = Plugin.modName + " " + Plugin.modVersion;
+
+        // Keeps a window fully on screen (e.g. the room selector, which opens below the main window and used
+        // to land off the bottom of 720p screens with no way to drag it back).
+        private static Rect ClampToScreen(Rect rect, float screenW, float screenH)
+        {
+            rect.x = Mathf.Clamp(rect.x, 0f, Mathf.Max(0f, screenW - rect.width));
+            rect.y = Mathf.Clamp(rect.y, 0f, Mathf.Max(0f, screenH - rect.height));
+            return rect;
+        }
+
+        private static float UiScale => Mathf.Clamp(Plugin.UIScale.Value, 0.5f, 3f);
+
+        private void DrawScaledGUI()
+        {
             if (Time.unscaledTime < seedFlashTimer && !string.IsNullOrEmpty(seedFlashText))
             {
                 DrawSeedFlash();
@@ -220,20 +267,24 @@ namespace SpeedRave
 
             if (showGUI)
             {
-                winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
+                // Screen size in the scaled GUI coordinate space.
+                float screenW = Screen.width / UiScale;
+                float screenH = Screen.height / UiScale;
+
+                winRect.height = Mathf.Min(HEIGHT, screenH - 2 * WindowMargin);
+                winRect = ClampToScreen(GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, WindowTitle), screenW, screenH);
 
                 if (sceneSelectorShowGUI)
                 {
-                    sceneWinRect.x = winRect.x;
-                    sceneWinRect.y = winRect.y + winRect.height + 10;
-                    sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
+                    sceneWinRect.width = Mathf.Min(SceneWindowWidth, screenW - 2 * WindowMargin);
+                    sceneWinRect.height = Mathf.Min(SceneWindowHeight, screenH - 2 * WindowMargin);
+                    sceneWinRect = ClampToScreen(GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector"), screenW, screenH);
                 }
 
                 if (configShowGUI)
                 {
-                    configWinRect.x = winRect.x + winRect.width + 10;
-                    configWinRect.y = winRect.y;
-                    configWinRect = GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config");
+                    configWinRect.height = Mathf.Min(ConfigWindowHeight, screenH - 2 * WindowMargin);
+                    configWinRect = ClampToScreen(GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config"), screenW, screenH);
                 }
             }
         }
@@ -253,11 +304,8 @@ namespace SpeedRave
                 seedFlashShadowStyle.fontStyle = FontStyle.Bold;
             }
 
-            if (InventoryOverlay.GameFont != null)
-            {
-                seedFlashStyle.font = InventoryOverlay.GameFont;
-                seedFlashShadowStyle.font = InventoryOverlay.GameFont;
-            }
+            seedFlashStyle.font = InventoryOverlay.DisplayFont;
+            seedFlashShadowStyle.font = InventoryOverlay.DisplayFont;
 
             float timeLeft = seedFlashTimer - Time.unscaledTime;
             float alpha = Mathf.Clamp01(timeLeft / 0.25f);
@@ -300,12 +348,15 @@ namespace SpeedRave
             Plugin.KeySplit.Value = GUILayout.Toggle(Plugin.KeySplit.Value, " Split on Key");
             Plugin.TwentyFruitSplit.Value = GUILayout.Toggle(Plugin.TwentyFruitSplit.Value, " Split on 20 Fruit");
             Plugin.ItemSplit.Value = GUILayout.Toggle(Plugin.ItemSplit.Value, " Split on Item Pickup");
+            Plugin.AllEndings.Value = GUILayout.Toggle(Plugin.AllEndings.Value, " All Endings (run ends after all 3)");
             Plugin.LiveSplitAutoReconnect.Value = GUILayout.Toggle(Plugin.LiveSplitAutoReconnect.Value, " Auto-Reconnect LiveSplit (Every 6s)");
 
             GUILayout.Space(10);
 
             GUILayout.Label("<b>Seed Control</b>");
             Plugin.SeedEnabled.Value = GUILayout.Toggle(Plugin.SeedEnabled.Value, " Enable Seeding");
+            GUILayout.Label($"Seed Flash on Restart: {Plugin.SeedFlashDuration.Value:F1}s");
+            Plugin.SeedFlashDuration.Value = (float)Math.Round(GUILayout.HorizontalSlider(Plugin.SeedFlashDuration.Value, 0.5f, 10f) * 2f) / 2f;
 
             GUILayout.Label("<b>Speedrun Timer</b>");
             Plugin.ShowOnScreenTimer.Value = GUILayout.Toggle(Plugin.ShowOnScreenTimer.Value, " Show On-Screen Timer");
@@ -313,6 +364,7 @@ namespace SpeedRave
             {
                 GUILayout.Label($"Timer Font Size: {Plugin.TimerFontSize.Value:F0}");
                 Plugin.TimerFontSize.Value = GUILayout.HorizontalSlider(Plugin.TimerFontSize.Value, 20f, 80f);
+                Plugin.ShowTimerStateText.Value = GUILayout.Toggle(Plugin.ShowTimerStateText.Value, " Show LOADING / FINISHED text");
             }
 
             GUILayout.Label("<b>Inventory Overlay</b>");
@@ -328,6 +380,11 @@ namespace SpeedRave
 
             GUILayout.Label($"Item Padding: {Plugin.Padding.Value:F0}");
             Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
+
+            GUILayout.Label("<b>Accessibility</b>");
+            Plugin.UseGameFont.Value = GUILayout.Toggle(Plugin.UseGameFont.Value, " Use Game Font (off = plain font)");
+            GUILayout.Label($"UI Scale: {Plugin.UIScale.Value:F2}");
+            Plugin.UIScale.Value = (float)Math.Round(GUILayout.HorizontalSlider(Plugin.UIScale.Value, 0.5f, 3f) * 20f) / 20f;
 
             GUILayout.Label("<b>Performance</b>");
             bool currentVSync = Plugin.VSyncEnabled.Value;
@@ -360,34 +417,26 @@ namespace SpeedRave
             }
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.Space(10);
-            GUILayout.Label("Restart Run Bind:");
-            Plugin.RestartBind.Value = GUILayout.TextField(Plugin.RestartBind.Value);
+            BindField("Restart Run Bind:", Plugin.RestartBind);
+            BindField("Restart Run Alt Bind (e.g. joystick button 7):", Plugin.RestartAltBind);
 
             GUILayout.Space(10);
             GUILayout.Label("<b>Trainer</b>");
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Trainer Binds</b>");
-            GUILayout.Label("Add Cheese Bind:");
-            Plugin.AddCheeseBind.Value = GUILayout.TextField(Plugin.AddCheeseBind.Value);
-            GUILayout.Label("Remove Cheese Bind:");
-            Plugin.RemoveCheeseBind.Value = GUILayout.TextField(Plugin.RemoveCheeseBind.Value);
-            GUILayout.Label("Add Fruit Bind:");
-            Plugin.AddFruitBind.Value = GUILayout.TextField(Plugin.AddFruitBind.Value);
-            GUILayout.Label("Remove Fruit Bind:");
-            Plugin.RemoveFruitBind.Value = GUILayout.TextField(Plugin.RemoveFruitBind.Value);
-            GUILayout.Label("Lock Scene Bind:");
-            Plugin.LockBind.Value = GUILayout.TextField(Plugin.LockBind.Value);
-            GUILayout.Label("Store Position Bind:");
-            Plugin.StorePositionBind.Value = GUILayout.TextField(Plugin.StorePositionBind.Value);
-            GUILayout.Label("Restore Position Bind:");
-            Plugin.RestorePositionBind.Value = GUILayout.TextField(Plugin.RestorePositionBind.Value);
-            GUILayout.Label("Open Trainer Bind:");
-            Plugin.OpenTrainerBind.Value = GUILayout.TextField(Plugin.OpenTrainerBind.Value);
-            GUILayout.Label("Increment Scene Bind:");
-            Plugin.IncrementSceneBind.Value = GUILayout.TextField(Plugin.IncrementSceneBind.Value);
-            GUILayout.Label("Decrement Scene Bind:");
-            Plugin.DecrementSceneBind.Value = GUILayout.TextField(Plugin.DecrementSceneBind.Value);
+            GUILayout.Label("Key names: letters, digits, F1-F12, Insert, Space, left shift, up, [1] (keypad), joystick button 0-19. Leave empty to unbind.");
+            BindField("Add Cheese Bind:", Plugin.AddCheeseBind);
+            BindField("Remove Cheese Bind:", Plugin.RemoveCheeseBind);
+            BindField("Add Fruit Bind:", Plugin.AddFruitBind);
+            BindField("Remove Fruit Bind:", Plugin.RemoveFruitBind);
+            BindField("Lock Scene Bind:", Plugin.LockBind);
+            BindField("Store Position Bind:", Plugin.StorePositionBind);
+            BindField("Restore Position Bind:", Plugin.RestorePositionBind);
+            BindField("Open Trainer Bind:", Plugin.OpenTrainerBind);
+            BindField("Open Trainer Alt Bind (e.g. joystick button 6):", Plugin.OpenTrainerAltBind);
+            BindField("Increment Scene Bind:", Plugin.IncrementSceneBind);
+            BindField("Decrement Scene Bind:", Plugin.DecrementSceneBind);
 
             GUILayout.Space(15);
             bool isSavedRecently = Time.unscaledTime < saveFeedbackTime;
@@ -432,6 +481,42 @@ namespace SpeedRave
             GUI.DragWindow();
         }
 
+        // A bind text field whose edits only take effect when Apply is pressed.
+        private void BindField(string label, ConfigEntry<string> entry)
+        {
+            GUILayout.Label(label);
+            GUILayout.BeginHorizontal();
+            string current = entry.Value ?? "";
+            if (!pendingBinds.TryGetValue(entry, out string text))
+            {
+                text = current;
+            }
+            text = GUILayout.TextField(text);
+            bool valid = string.IsNullOrWhiteSpace(text) || KeyBinds.TryParse(text, out _);
+            if (text != current)
+            {
+                pendingBinds[entry] = text;
+                GUI.enabled = valid;
+                if (GUILayout.Button("Apply", GUILayout.Width(60)))
+                {
+                    entry.Value = text.Trim();
+                    pendingBinds.Remove(entry);
+                    GUIUtility.keyboardControl = 0;
+                }
+                GUI.enabled = true;
+            }
+            else
+            {
+                pendingBinds.Remove(entry);
+            }
+            GUILayout.EndHorizontal();
+
+            if (!valid)
+            {
+                GUILayout.Label("<color=#FF6666>Unknown key name</color>");
+            }
+        }
+
         private void SceneWinProc(int id)
         {
             sceneScroll = GUILayout.BeginScrollView(sceneScroll);
@@ -450,6 +535,8 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
+            // Scrollable so nothing is cut off when the window is shrunk to fit a short screen.
+            mainScroll = GUILayout.BeginScrollView(mainScroll);
             if (Plugin.AutosplitterEnabled.Value)
             {
                 GUILayout.Label("<b>Autosplitter</b>");
@@ -472,32 +559,31 @@ namespace SpeedRave
             if (Plugin.SeedEnabled.Value)
             {
                 GUILayout.Label("<b>Seed Control</b>");
-                GUILayout.Label($"Current: {Patches.SetSeedPatchs.Seed}");
+                GUILayout.Label($"Current: {Patches.SetSeedPatches.Seed}");
                 seedInput = GUILayout.TextField(seedInput, 11);
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Set Seed"))
                 {
-                    if (int.TryParse(seedInput, out parsedSeed))
+                    if (int.TryParse(seedInput, out int parsedSeed))
                     {
-                        Patches.SetSeedPatchs.Seed = parsedSeed;
-                        UnityEngine.Random.InitState(parsedSeed);
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = parsedSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                     }
                 }
                 if (GUILayout.Button("Last Random"))
                 {
-                    if (Patches.SetSeedPatchs.lastRandomSeed != 0)
+                    if (Patches.SetSeedPatches.hasLastRandomSeed)
                     {
-                        Patches.SetSeedPatchs.Seed = Patches.SetSeedPatchs.lastRandomSeed;
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = Patches.SetSeedPatches.lastRandomSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                     }
                 }
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Copy Seed"))
                 {
-                    GUIUtility.systemCopyBuffer = Patches.SetSeedPatchs.Seed.ToString();
+                    GUIUtility.systemCopyBuffer = Patches.SetSeedPatches.Seed.ToString();
                     seedFeedbackMessage = "✓ Seed copied to clipboard!";
                     seedFeedbackTime = Time.unscaledTime + 2.0f;
                 }
@@ -506,9 +592,8 @@ namespace SpeedRave
                     string clip = GUIUtility.systemCopyBuffer;
                     if (int.TryParse(clip, out int pastedSeed))
                     {
-                        Patches.SetSeedPatchs.Seed = pastedSeed;
-                        UnityEngine.Random.InitState(pastedSeed);
-                        Patches.SetSeedPatchs.randomSeed = false;
+                        Patches.SetSeedPatches.Seed = pastedSeed;
+                        Patches.SetSeedPatches.randomSeed = false;
                         seedInput = pastedSeed.ToString();
                         seedFeedbackMessage = "✓ Seed pasted from clipboard!";
                         seedFeedbackTime = Time.unscaledTime + 2.0f;
@@ -526,13 +611,13 @@ namespace SpeedRave
                     GUILayout.Label($"<color=#55FF55><b>{seedFeedbackMessage}</b></color>");
                 }
 
-                Patches.SetSeedPatchs.randomSeed = GUILayout.Toggle(Patches.SetSeedPatchs.randomSeed, " Use Random Seed");
+                Patches.SetSeedPatches.randomSeed = GUILayout.Toggle(Patches.SetSeedPatches.randomSeed, " Use Random Seed");
             }
             
             // Run Controls
             GUILayout.Label("<b>Run Controls</b>");
             GUILayout.BeginHorizontal();
-            string restartBindDisplay = string.IsNullOrEmpty(Plugin.RestartBind.Value) ? "UNBOUND" : Plugin.RestartBind.Value.ToUpper();
+            string restartBindDisplay = BindLabel(Plugin.RestartBind);
             if (GUILayout.Button($"Instant Restart ({restartBindDisplay})"))
             {
                 TriggerInstantRestart();
@@ -549,15 +634,21 @@ namespace SpeedRave
                 if (GUILayout.Button(sceneSelectorShowGUI ? "Close Selector" : "Open Room Selector"))
                 {
                     sceneSelectorShowGUI = !sceneSelectorShowGUI;
+                    if (sceneSelectorShowGUI)
+                    {
+                        // Place it under the main window when opened; after that it can be dragged freely.
+                        sceneWinRect.x = winRect.x;
+                        sceneWinRect.y = winRect.y + winRect.height + 10;
+                    }
                 }
 
                 GUILayout.Space(5);
 
                 // Room Locking
                 GUILayout.Label("<b>Room Lock</b>");
-                string lockStatus = locked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
+                string lockStatus = sceneLocked ? "<color=red>LOCKED</color>" : "<color=green>UNLOCKED</color>";
                 GUILayout.Label($"Status: {lockStatus}");
-                if (GUILayout.Button(locked ? $"Unlock ({Plugin.LockBind.Value.ToUpper()})" : $"Lock ({Plugin.LockBind.Value.ToUpper()})"))
+                if (GUILayout.Button(sceneLocked ? $"Unlock ({BindLabel(Plugin.LockBind)})" : $"Lock ({BindLabel(Plugin.LockBind)})"))
                 {
                     ToggleSceneLock();
                 }
@@ -567,20 +658,20 @@ namespace SpeedRave
 
                 // Cheese Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Cheese ({Plugin.AddCheeseBind.Value.ToUpper()})")) ModifyCheese(1);
-                if (GUILayout.Button($"Sub Cheese ({Plugin.RemoveCheeseBind.Value.ToUpper()})")) ModifyCheese(-1);
+                if (GUILayout.Button($"Add Cheese ({BindLabel(Plugin.AddCheeseBind)})")) ModifyCheese(1);
+                if (GUILayout.Button($"Sub Cheese ({BindLabel(Plugin.RemoveCheeseBind)})")) ModifyCheese(-1);
                 GUILayout.EndHorizontal();
 
                 // Fruit Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Add Fruit ({Plugin.AddFruitBind.Value.ToUpper()})")) ModifyFruit(1);
-                if (GUILayout.Button($"Sub Fruit ({Plugin.RemoveFruitBind.Value.ToUpper()})")) ModifyFruit(-1);
+                if (GUILayout.Button($"Add Fruit ({BindLabel(Plugin.AddFruitBind)})")) ModifyFruit(1);
+                if (GUILayout.Button($"Sub Fruit ({BindLabel(Plugin.RemoveFruitBind)})")) ModifyFruit(-1);
                 GUILayout.EndHorizontal();
 
                 // Position Row
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Store Pos ({Plugin.StorePositionBind.Value.ToUpper()})")) StorePlayerPosition();
-                if (GUILayout.Button($"Restore Pos ({Plugin.RestorePositionBind.Value.ToUpper()})")) RestorePlayerPosition();
+                if (GUILayout.Button($"Store Pos ({BindLabel(Plugin.StorePositionBind)})")) StorePlayerPosition();
+                if (GUILayout.Button($"Restore Pos ({BindLabel(Plugin.RestorePositionBind)})")) RestorePlayerPosition();
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(5);
@@ -590,22 +681,46 @@ namespace SpeedRave
             if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
             {
                 configShowGUI = !configShowGUI;
+                if (configShowGUI)
+                {
+                    // Place it beside the main window when opened; after that it can be dragged freely.
+                    configWinRect.x = winRect.x + winRect.width + 10;
+                    configWinRect.y = winRect.y;
+                }
             }
             GUILayout.EndHorizontal();
 
+            GUILayout.EndScrollView();
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
         }
 
+        // Text shown for a bind on a button. Never throws, even for an empty or missing value.
+        private static string BindLabel(ConfigEntry<string> bind)
+        {
+            string value = bind?.Value;
+            if (string.IsNullOrWhiteSpace(value)) return "UNBOUND";
+
+            // Cached per bind value so the trainer window doesn't allocate new label strings every OnGUI pass.
+            if (!bindLabelCache.TryGetValue(value, out string label))
+            {
+                label = value.Trim().ToUpperInvariant();
+                bindLabelCache[value] = label;
+            }
+            return label;
+        }
+
+        private static readonly Dictionary<string, string> bindLabelCache = new Dictionary<string, string>();
+
         private void ToggleSceneLock()
         {
-            if (!locked)
+            if (!sceneLocked)
             {
                 Patches.SceneLock.lockedScene = SceneManager.GetActiveScene().name;
-                locked = true;
+                sceneLocked = true;
             }
             else
             {
-                locked = false;
+                sceneLocked = false;
             }
         }
 
@@ -613,7 +728,7 @@ namespace SpeedRave
         {
             if (ReferenceManager.ActiveFoodControl != null)
             {
-                ReferenceManager.ActiveFoodControl.fruit += amount;
+                ReferenceManager.ActiveFoodControl.fruit = Math.Max(0, ReferenceManager.ActiveFoodControl.fruit + amount);
             }
         }
 
@@ -621,7 +736,7 @@ namespace SpeedRave
         {
             if (ReferenceManager.ActiveFoodControl != null)
             {
-                ReferenceManager.ActiveFoodControl.cheese += amount;
+                ReferenceManager.ActiveFoodControl.cheese = Math.Max(0, ReferenceManager.ActiveFoodControl.cheese + amount);
             }
         }
 
@@ -683,6 +798,35 @@ namespace SpeedRave
             return 0;
         }
 
+        // Clears the game's save the same way the title screen does. Mid-run there is no TitleScreenControler
+        // in the scene, so a temporary inactive one is created just to call ClearSaveData(). This avoids
+        // PlayerPrefs.DeleteAll(), which would also wipe the game's settings and other mods' data.
+        private static void ClearGameSaveData()
+        {
+            var titleController = UnityEngine.Object.FindObjectOfType<TitleScreenControler>();
+            if (titleController != null)
+            {
+                titleController.ClearSaveData();
+                return;
+            }
+
+            // Inactive so that Awake/Start/Update never run on the temporary component.
+            var temp = new GameObject("SpeedRaveTempTitleController");
+            temp.SetActive(false);
+            try
+            {
+                temp.AddComponent<TitleScreenControler>().ClearSaveData();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Could not clear save data on restart: {ex.Message}");
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(temp);
+            }
+        }
+
         public static void TriggerInstantRestart()
         {
             if (Autosplitter.Instance != null)
@@ -692,27 +836,17 @@ namespace SpeedRave
 
             if (Plugin.ClearSaveOnStart.Value)
             {
-                var titleController = UnityEngine.Object.FindObjectOfType<TitleScreenControler>();
-                if (titleController != null)
-                {
-                    titleController.ClearSaveData();
-                }
-                else
-                {
-                    PlayerPrefs.DeleteAll();
-                    PlayerPrefs.Save();
-                }
+                ClearGameSaveData();
             }
 
             if (Plugin.SeedEnabled.Value)
             {
-                if (Patches.SetSeedPatchs.randomSeed)
-                {
-                    Patches.SetSeedPatchs.Init();
-                }
-                seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
-                seedFlashMode = Patches.SetSeedPatchs.randomSeed ? "Random Seed" : "Set Seed";
-                seedFlashTimer = Time.unscaledTime + 1.0f;
+                // Always re-seed: a new seed in random mode, and a rewind of the seeded RNG stream to the
+                // same seed in set-seed mode (otherwise the stream continues from the previous attempt).
+                Patches.SetSeedPatches.Init();
+                seedFlashText = $"Seed: {Patches.SetSeedPatches.Seed}";
+                seedFlashMode = Patches.SetSeedPatches.randomSeed ? "Random Seed" : "Set Seed";
+                seedFlashTimer = Time.unscaledTime + Mathf.Clamp(Plugin.SeedFlashDuration.Value, 0.5f, 10f);
             }
 
             OnScreenTimer.ResetTimer();

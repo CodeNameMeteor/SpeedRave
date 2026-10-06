@@ -7,13 +7,21 @@ namespace SpeedRave
     public class OnScreenTimer : MonoBehaviour
     {
         private static readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-        public static float CurrentTime => (float)stopwatch.Elapsed.TotalSeconds;
+        // Time added back after a loading pause that had no load behind it.
+        private static TimeSpan correction = TimeSpan.Zero;
+        public static TimeSpan Elapsed => stopwatch.Elapsed + correction;
+
+        // A trigger pauses the timer before the game loads the next room. If no room load follows within
+        // this many seconds (for example a door that refused to open), the pause is treated as false.
+        private const float FalsePauseTimeout = 15f;
         public static bool IsRunning { get; private set; } = false;
         public static bool IsRunActive { get; private set; } = false;
         public static bool IsEnded { get; private set; } = false;
 
         private GUIStyle timerStyle;
         private GUIStyle shadowStyle;
+        private GUIStyle stateStyle;
+        private GUIStyle stateShadowStyle;
 
         private int lastFontSize = -1;
         private Font lastFont = null;
@@ -21,8 +29,35 @@ namespace SpeedRave
         private float cachedColonWidth = 10f;
         private float cachedDotWidth = 10f;
 
+        // Cached so OnGUI (called several times per frame) doesn't allocate: the active scene is tracked via
+        // activeSceneChanged, and the time string is only rebuilt when the displayed hundredth changes.
+        private static bool onTitleScreen = true;
+        private long cachedCentiseconds = -1;
+        private string cachedTimeText = "";
+
+        private string GetFormattedTime()
+        {
+            TimeSpan elapsed = Elapsed;
+            long centiseconds = elapsed.Ticks / (TimeSpan.TicksPerMillisecond * 10);
+            if (centiseconds != cachedCentiseconds)
+            {
+                cachedCentiseconds = centiseconds;
+                // Formats straight from the TimeSpan (see Core.TimeFormat).
+                cachedTimeText = Core.TimeFormat.Timer(elapsed);
+            }
+            return cachedTimeText;
+        }
+
+        private static void OnActiveSceneChanged(Scene previous, Scene next)
+        {
+            onTitleScreen = next.name == "TitleScreen";
+        }
+
         private void Awake()
         {
+            onTitleScreen = SceneManager.GetActiveScene().name == "TitleScreen";
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+
             timerStyle = new GUIStyle();
             timerStyle.normal.textColor = Color.white;
             timerStyle.alignment = TextAnchor.MiddleCenter;
@@ -31,60 +66,60 @@ namespace SpeedRave
             shadowStyle.normal.textColor = Color.black;
             shadowStyle.alignment = TextAnchor.MiddleCenter;
 
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
+            stateStyle = new GUIStyle();
+            stateStyle.alignment = TextAnchor.UpperRight;
+            stateShadowStyle = new GUIStyle();
+            stateShadowStyle.normal.textColor = Color.black;
+            stateShadowStyle.alignment = TextAnchor.UpperRight;
 
-        private void OnDestroy()
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            string sceneName = scene.name;
-            string sceneLower = sceneName.ToLower();
-
-            if (sceneName == "Sewer_Start" && mode == LoadSceneMode.Single)
-            {
-                StartTimer();
-            }
-            else if (sceneName == "TitleScreen")
-            {
-                ResetTimer();
-            }
-            else if (IsEndingScene(sceneLower))
-            {
-                StopTimer();
-            }
+            // Starting, resetting and stopping the timer is driven by Autosplitter (StartRun, ResetRun,
+            // HandleEnding) so the on-screen timer and LiveSplit always agree.
         }
 
         public static bool IsEndingScene(string sceneLower)
         {
-            return sceneLower.Contains("ending") ||
-                   sceneLower == "plaguending" ||
-                   sceneLower == "spaceending" ||
-                   sceneLower == "truending" ||
-                   sceneLower == "winroom1" ||
-                   sceneLower == "credits";
+            return Core.EndingScenes.IsEnding(sceneLower);
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         }
 
         private void Update()
         {
-            // Resume when the first frame of gameplay actually executes in the new scene
-            if (IsRunActive && !IsEnded && Autosplitter.isLoading && Autosplitter.justLoadedScene)
+            // Resume when the first frame of gameplay actually executes in the new scene. The loading pause
+            // ends even outside a run (practice), so it can't linger until the next run starts.
+            if (RunState.IsLoading && RunState.LoadFinished)
             {
-                Autosplitter.justLoadedScene = false;
-                Autosplitter.isLoading = false;
+                RunState.EndLoading();
+                if (IsRunActive && !IsEnded)
+                {
+                    ResumeTimer();
+                    if (Autosplitter.Instance != null)
+                    {
+                        Autosplitter.Instance.SendUnpauseGameTimeImmediate();
+                    }
+                }
+            }
+            else if (IsRunActive && !IsEnded && RunState.IsLoading && !RunState.LoadFinished
+                     && Time.realtimeSinceStartup - RunState.LoadingStartedAt > FalsePauseTimeout)
+            {
+                float pausedFor = Time.realtimeSinceStartup - RunState.LoadingStartedAt;
+                Log.Warning($"Timer was paused for {pausedFor:F1}s without a room load; resuming and adding the time back.");
+                RunState.EndLoading();
+                correction += TimeSpan.FromSeconds(pausedFor);
                 ResumeTimer();
                 if (Autosplitter.Instance != null)
                 {
-                    Autosplitter.Instance.SendUnpauseGameTimeImmediate();
+                    Autosplitter.Instance.ResumeAfterFalsePause();
                 }
             }
         }
 
         public static void StartTimer()
         {
+            correction = TimeSpan.Zero;
             stopwatch.Restart();
             IsRunActive = true;
             IsRunning = true;
@@ -122,6 +157,7 @@ namespace SpeedRave
 
         public static void ResetTimer()
         {
+            correction = TimeSpan.Zero;
             stopwatch.Reset();
             IsRunActive = false;
             IsRunning = false;
@@ -151,19 +187,16 @@ namespace SpeedRave
         {
             if (!Plugin.ShowOnScreenTimer.Value) return;
 
-            string currentScene = SceneManager.GetActiveScene().name;
-            if (currentScene == "TitleScreen" && !IsRunActive && !IsEnded) return;
+            if (onTitleScreen && !IsRunActive && !IsEnded) return;
 
             int fontSize = Mathf.RoundToInt(Plugin.TimerFontSize.Value);
             timerStyle.fontSize = fontSize;
             shadowStyle.fontSize = fontSize;
 
-            Font activeFont = InventoryOverlay.GameFont;
-            if (activeFont != null)
-            {
-                timerStyle.font = activeFont;
-                shadowStyle.font = activeFont;
-            }
+            // null = Unity's default font (when the game font is off or not found yet).
+            Font activeFont = InventoryOverlay.DisplayFont;
+            timerStyle.font = activeFont;
+            shadowStyle.font = activeFont;
 
             UpdateMetrics(fontSize, activeFont);
 
@@ -171,7 +204,7 @@ namespace SpeedRave
             {
                 timerStyle.normal.textColor = new Color(0.2f, 1f, 0.5f);
             }
-            else if (Autosplitter.isLoading)
+            else if (RunState.IsLoading)
             {
                 timerStyle.normal.textColor = new Color(1f, 0.85f, 0.2f);
             }
@@ -180,7 +213,7 @@ namespace SpeedRave
                 timerStyle.normal.textColor = Color.white;
             }
 
-            string formattedTime = FormatTime(CurrentTime);
+            string formattedTime = GetFormattedTime();
 
             // Compute fixed total width for the formatted string
             float totalWidth = 0f;
@@ -210,6 +243,28 @@ namespace SpeedRave
 
                 currentX += slotWidth;
             }
+
+            DrawStateText(startX, y + height, totalWidth, fontSize);
+        }
+
+        // Optional text cue under the timer, so the loading/finished state isn't shown by colour alone.
+        private void DrawStateText(float x, float y, float width, int timerFontSize)
+        {
+            if (!Plugin.ShowTimerStateText.Value) return;
+
+            string state = IsEnded ? "FINISHED" : RunState.IsLoading ? "LOADING" : null;
+            if (state == null) return;
+
+            int fontSize = Mathf.Max(12, timerFontSize / 2);
+            stateStyle.fontSize = fontSize;
+            stateShadowStyle.fontSize = fontSize;
+            stateStyle.font = timerStyle.font;
+            stateShadowStyle.font = timerStyle.font;
+            stateStyle.normal.textColor = timerStyle.normal.textColor;
+
+            Rect rect = new Rect(x, y, width, fontSize + 6f);
+            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), state, stateShadowStyle);
+            GUI.Label(rect, state, stateStyle);
         }
 
         private static readonly string[] DigitStrings = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -224,21 +279,6 @@ namespace SpeedRave
             if (c == '.') return DotString;
             if (c == ' ') return SpaceString;
             return c.ToString();
-        }
-
-        private string FormatTime(float seconds)
-        {
-            if (seconds < 0f) seconds = 0f;
-            TimeSpan ts = TimeSpan.FromSeconds(seconds);
-            int hundredths = (int)((seconds % 1f) * 100f);
-            if (hundredths < 0) hundredths = 0;
-            if (hundredths > 99) hundredths = 99;
-
-            if (ts.TotalHours >= 1)
-            {
-                return string.Format("{0}:{1:D2}:{2:D2}.{3:D2}", (int)ts.TotalHours, ts.Minutes, ts.Seconds, hundredths);
-            }
-            return string.Format("{0:D2}:{1:D2}.{2:D2}", ts.Minutes, ts.Seconds, hundredths);
         }
     }
 }

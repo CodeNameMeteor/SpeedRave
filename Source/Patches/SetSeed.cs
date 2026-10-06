@@ -5,10 +5,11 @@ using Random = UnityEngine.Random;
 
 namespace SpeedRave.Patches
 {
-    static class SetSeedPatchs
+    static class SetSeedPatches
     {
         public static int Seed;
         public static int lastRandomSeed = 0;
+        public static bool hasLastRandomSeed = false;
         public static bool randomSeed = true;
 
         public static GameObject seedText;
@@ -55,7 +56,9 @@ namespace SpeedRave.Patches
         [HarmonyPatch(typeof(SelectNPCScript), "Start")]
         [HarmonyPatch(typeof(SpawnPointScript), "Start")]
         [HarmonyPatch(typeof(WalkUpDialogue), "Start")]
-        [HarmonyPostfix]
+        // A finalizer rather than a postfix: it also runs when the patched Start() throws, so stateDepth can't
+        // leak and leave Unity's global RNG swapped to the seeded stream for the rest of the session.
+        [HarmonyFinalizer]
         public static void RestoreState()
         {
             if (Plugin.SeedEnabled.Value)
@@ -78,14 +81,10 @@ namespace SpeedRave.Patches
             {
                 if (randomSeed)
                 {
-                    int newSeed = (int)DateTime.Now.Ticks;
-                    for (int i = 0; i < 4; ++i)
-                    {
-                        newSeed = newSeed * 0x6C078965 + 1;
-                    }
-                    Seed = newSeed;
-                    Debug.Log($"[SpeedRave] Seed set to {Seed}");
+                    Seed = Core.SeedGenerator.FromTicks(DateTime.Now.Ticks);
+                    Log.Info($"Seed set to {Seed}");
                     lastRandomSeed = Seed;
+                    hasLastRandomSeed = true;
                     
                     StoreState();
                     Random.InitState(Seed);
@@ -104,6 +103,11 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void addSeedText(FoodControl __instance)
         {
+            if (__instance == QuitToMenuPatch.DestroyedDuplicate)
+            {
+                // A duplicate that is being destroyed; keep pointing at the surviving FoodControl's seed text.
+                return;
+            }
             if (Plugin.SeedEnabled.Value && __instance != null && __instance.inventoryText != null)
             {
                 foodControlSeedText = GameObject.Instantiate(__instance.inventoryText.gameObject, __instance.inventoryText.transform);
@@ -112,11 +116,8 @@ namespace SpeedRave.Patches
                 if (seedSTM != null)
                 {
                     seedSTM.text = "Seed: " + Seed;
-                    seedSTM.transform.localPosition = new Vector3(
-                        (seedSTM.transform.localPosition.x - Screen.width / 2f) + 100f, 
-                        -Screen.height / 2f,
-                        seedSTM.transform.localPosition.z
-                    );
+                    seedTextBaseX = seedSTM.transform.localPosition.x;
+                    PositionSeedText(seedSTM.transform);
                 }
             }
         }
@@ -131,8 +132,29 @@ namespace SpeedRave.Patches
                 if (seedSTM != null)
                 {
                     seedSTM.text = "Seed: " + Seed;
+                    if (Screen.width != seedTextScreenWidth || Screen.height != seedTextScreenHeight)
+                    {
+                        PositionSeedText(seedSTM.transform);
+                    }
                 }
             }
+        }
+
+        // The inventory seed text is placed relative to the screen size, so it is re-placed when the
+        // resolution changes rather than staying where the size at FoodControl.Start put it.
+        private static float seedTextBaseX;
+        private static int seedTextScreenWidth;
+        private static int seedTextScreenHeight;
+
+        private static void PositionSeedText(Transform seedTransform)
+        {
+            seedTextScreenWidth = Screen.width;
+            seedTextScreenHeight = Screen.height;
+            seedTransform.localPosition = new Vector3(
+                (seedTextBaseX - Screen.width / 2f) + 100f,
+                -Screen.height / 2f,
+                seedTransform.localPosition.z
+            );
         }
 
         [HarmonyPatch(typeof(TitleScreenControler), "Update")]
