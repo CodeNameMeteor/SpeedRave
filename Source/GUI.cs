@@ -148,6 +148,12 @@ namespace SpeedRave
             }
         }
 
+        private void Start()
+        {
+            // Show the configured cap rather than a hard-coded -1.
+            fpsInput = Plugin.TargetFPS.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         private void Update()
         {
             if (SafeGetKeyDown(Plugin.OpenTrainerBind.Value))
