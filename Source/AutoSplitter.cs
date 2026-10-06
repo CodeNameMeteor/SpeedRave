@@ -1,6 +1,7 @@
 using BepInEx;
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -139,8 +140,7 @@ namespace SpeedRave
                     // Start background reader to drain LiveSplit responses
                     _ = Task.Run(() => ReadLoopAsync(stream, netCts.Token));
 
-                    AttemptSendCommand("getcurrenttimerphase");
-                    AttemptSendCommand("setgametime 0");
+                    SyncRunStateAfterConnect();
                 }
             }
             catch (Exception ex)
@@ -155,6 +155,30 @@ namespace SpeedRave
             {
                 isConnecting = false;
             }
+        }
+
+        // Called after (re)connecting. Never zeroes game time: mid-run, LiveSplit is synced to the
+        // on-screen timer and the current loading state instead.
+        private void SyncRunStateAfterConnect()
+        {
+            if (!gameStarted || runFinished) return;
+
+            AttemptSendCommand("setgametime " + FormatLiveSplitTime(OnScreenTimer.Elapsed));
+            if (isLoading)
+            {
+                SendPauseGameTimeImmediate();
+            }
+            else
+            {
+                SendUnpauseGameTimeImmediate();
+            }
+        }
+
+        // LiveSplit Server accepts h:mm:ss.ff for setgametime.
+        private static string FormatLiveSplitTime(TimeSpan time)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}:{2:00}.{3:00}",
+                (int)time.TotalHours, time.Minutes, time.Seconds, time.Milliseconds / 10);
         }
 
         private async Task ReadLoopAsync(NetworkStream netStream, CancellationToken ct)
@@ -324,7 +348,7 @@ namespace SpeedRave
             AttemptSendCommand("unpausegametime");
             AttemptSendCommand("reset");
             AttemptSendCommand("starttimer");
-            //AttemptSendCommand("setgametime 0");
+            AttemptSendCommand("initgametime");
 
             ResetRunFlags();
             timerPaused = false;

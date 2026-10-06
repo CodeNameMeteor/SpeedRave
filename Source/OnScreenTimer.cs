@@ -8,6 +8,7 @@ namespace SpeedRave
     {
         private static readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         public static float CurrentTime => (float)stopwatch.Elapsed.TotalSeconds;
+        public static TimeSpan Elapsed => stopwatch.Elapsed;
         public static bool IsRunning { get; private set; } = false;
         public static bool IsRunActive { get; private set; } = false;
         public static bool IsEnded { get; private set; } = false;
