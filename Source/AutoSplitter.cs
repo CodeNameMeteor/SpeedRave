@@ -78,11 +78,13 @@ namespace SpeedRave
             Instance = this;
             currentSceneName = SceneManager.GetActiveScene().name;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            Plugin.AutosplitterEnabled.SettingChanged += OnAutosplitterEnabledChanged;
         }
 
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            Plugin.AutosplitterEnabled.SettingChanged -= OnAutosplitterEnabledChanged;
             Disconnect();
         }
 
@@ -123,9 +125,18 @@ namespace SpeedRave
             }
         }
 
+        // Turning the autosplitter off drops the LiveSplit connection, so nothing more is sent.
+        private void OnAutosplitterEnabledChanged(object sender, EventArgs e)
+        {
+            if (!Plugin.AutosplitterEnabled.Value)
+            {
+                Disconnect();
+            }
+        }
+
         public async void ConnectToLiveSplit()
         {
-            if (isConnecting || IsConnectedToLivesplit) return;
+            if (!Plugin.AutosplitterEnabled.Value || isConnecting || IsConnectedToLivesplit) return;
 
             isConnecting = true;
             try
