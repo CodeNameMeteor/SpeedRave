@@ -106,6 +106,11 @@ namespace SpeedRave.Patches
         [HarmonyPostfix]
         public static void addSeedText(FoodControl __instance)
         {
+            if (__instance == QuitToMenuPatch.DestroyedDuplicate)
+            {
+                // A duplicate that is being destroyed; keep pointing at the surviving FoodControl's seed text.
+                return;
+            }
             if (Plugin.SeedEnabled.Value && __instance != null && __instance.inventoryText != null)
             {
                 foodControlSeedText = GameObject.Instantiate(__instance.inventoryText.gameObject, __instance.inventoryText.transform);
