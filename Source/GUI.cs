@@ -658,7 +658,7 @@ namespace SpeedRave
         {
             if (ReferenceManager.ActiveFoodControl != null)
             {
-                ReferenceManager.ActiveFoodControl.fruit += amount;
+                ReferenceManager.ActiveFoodControl.fruit = Math.Max(0, ReferenceManager.ActiveFoodControl.fruit + amount);
             }
         }
 
@@ -666,7 +666,7 @@ namespace SpeedRave
         {
             if (ReferenceManager.ActiveFoodControl != null)
             {
-                ReferenceManager.ActiveFoodControl.cheese += amount;
+                ReferenceManager.ActiveFoodControl.cheese = Math.Max(0, ReferenceManager.ActiveFoodControl.cheese + amount);
             }
         }
 
