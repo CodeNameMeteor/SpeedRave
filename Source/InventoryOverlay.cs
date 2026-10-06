@@ -274,19 +274,19 @@ namespace SpeedRave
             if (canShowLogos)
             {
                 // Draw Fruit (Bottom row)
-                DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), foodControl.fruit.ToString());
+                DrawRow(startX, currentY, fruitTexture, new Rect(0, 0, 1, 1), fruitText.Get(foodControl.fruit));
 
                 // Move Y up for the Cheese row
                 currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
 
-                DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), foodControl.cheese.ToString());
+                DrawRow(startX, currentY, cheeseTexture, new Rect(0, 0, 1, 1), cheeseText.Get(foodControl.cheese));
 
                 currentY -= (Plugin.IconSize.Value + Plugin.Padding.Value);
             }
             else
             {
                 // Text-only fallback
-                string txt = $"Cheese: {foodControl.cheese}    Fruit: {foodControl.fruit}";
+                string txt = GetTextOnlyLine(foodControl.cheese, foodControl.fruit);
                 DrawTextWithShadow(startX, currentY, txt);
                 currentY -= Plugin.TextHeight.Value + Plugin.Padding.Value;
             }
@@ -311,6 +311,40 @@ namespace SpeedRave
                     }
                 }
             }
+        }
+
+        // Number strings are only rebuilt when the value changes, so OnGUI doesn't allocate every frame.
+        private class CachedNumber
+        {
+            private int value = int.MinValue;
+            private string text = "";
+
+            public string Get(int newValue)
+            {
+                if (newValue != value)
+                {
+                    value = newValue;
+                    text = newValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                return text;
+            }
+        }
+
+        private readonly CachedNumber cheeseText = new CachedNumber();
+        private readonly CachedNumber fruitText = new CachedNumber();
+        private int lastLineCheese = int.MinValue;
+        private int lastLineFruit = int.MinValue;
+        private string cachedTextOnlyLine = "";
+
+        private string GetTextOnlyLine(int cheese, int fruit)
+        {
+            if (cheese != lastLineCheese || fruit != lastLineFruit)
+            {
+                lastLineCheese = cheese;
+                lastLineFruit = fruit;
+                cachedTextOnlyLine = $"Cheese: {cheese}    Fruit: {fruit}";
+            }
+            return cachedTextOnlyLine;
         }
 
         private void DrawRow(float x, float y, Texture icon, Rect uv, string countText)

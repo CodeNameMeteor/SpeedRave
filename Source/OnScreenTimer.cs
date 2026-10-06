@@ -28,8 +28,34 @@ namespace SpeedRave
         private float cachedColonWidth = 10f;
         private float cachedDotWidth = 10f;
 
+        // Cached so OnGUI (called several times per frame) doesn't allocate: the active scene is tracked via
+        // activeSceneChanged, and the time string is only rebuilt when the displayed hundredth changes.
+        private static bool onTitleScreen = true;
+        private long cachedCentiseconds = -1;
+        private string cachedTimeText = "";
+
+        private string GetFormattedTime()
+        {
+            TimeSpan elapsed = Elapsed;
+            long centiseconds = elapsed.Ticks / (TimeSpan.TicksPerMillisecond * 10);
+            if (centiseconds != cachedCentiseconds)
+            {
+                cachedCentiseconds = centiseconds;
+                cachedTimeText = FormatTime(elapsed);
+            }
+            return cachedTimeText;
+        }
+
+        private static void OnActiveSceneChanged(Scene previous, Scene next)
+        {
+            onTitleScreen = next.name == "TitleScreen";
+        }
+
         private void Awake()
         {
+            onTitleScreen = SceneManager.GetActiveScene().name == "TitleScreen";
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+
             timerStyle = new GUIStyle();
             timerStyle.normal.textColor = Color.white;
             timerStyle.alignment = TextAnchor.MiddleCenter;
@@ -49,6 +75,11 @@ namespace SpeedRave
             return sceneLower == "plaguending" ||
                    sceneLower == "spaceending" ||
                    sceneLower == "truending";
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         }
 
         private void Update()
@@ -149,8 +180,7 @@ namespace SpeedRave
         {
             if (!Plugin.ShowOnScreenTimer.Value) return;
 
-            string currentScene = SceneManager.GetActiveScene().name;
-            if (currentScene == "TitleScreen" && !IsRunActive && !IsEnded) return;
+            if (onTitleScreen && !IsRunActive && !IsEnded) return;
 
             int fontSize = Mathf.RoundToInt(Plugin.TimerFontSize.Value);
             timerStyle.fontSize = fontSize;
@@ -178,7 +208,7 @@ namespace SpeedRave
                 timerStyle.normal.textColor = Color.white;
             }
 
-            string formattedTime = FormatTime(Elapsed);
+            string formattedTime = GetFormattedTime();
 
             // Compute fixed total width for the formatted string
             float totalWidth = 0f;

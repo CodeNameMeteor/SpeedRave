@@ -641,8 +641,18 @@ namespace SpeedRave
         private static string BindLabel(ConfigEntry<string> bind)
         {
             string value = bind?.Value;
-            return string.IsNullOrWhiteSpace(value) ? "UNBOUND" : value.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(value)) return "UNBOUND";
+
+            // Cached per bind value so the trainer window doesn't allocate new label strings every OnGUI pass.
+            if (!bindLabelCache.TryGetValue(value, out string label))
+            {
+                label = value.Trim().ToUpperInvariant();
+                bindLabelCache[value] = label;
+            }
+            return label;
         }
+
+        private static readonly Dictionary<string, string> bindLabelCache = new Dictionary<string, string>();
 
         private void ToggleSceneLock()
         {
