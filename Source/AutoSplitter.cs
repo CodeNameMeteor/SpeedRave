@@ -405,15 +405,8 @@ namespace SpeedRave
 
             if (!shouldSplit)
             {
-                if (sceneLower == "plaguending" || sceneLower == "spaceending" || sceneLower == "truending")
-                {
-                    // An ending that was already split: treat it like any other room so the loading pause ends.
-                    justLoadedScene = true;
-                }
-                else
-                {
-                    OnScreenTimer.StopTimer();
-                }
+                // An ending that was already split: treat it like any other room so the loading pause ends.
+                justLoadedScene = true;
                 return;
             }
 

@@ -42,14 +42,13 @@ namespace SpeedRave
             // HandleEnding) so the on-screen timer and LiveSplit always agree.
         }
 
+        // The only scenes that end (or, with All Endings, split) a run. Both LiveSplit and the on-screen
+        // timer use this one list so they always stop on the same event.
         public static bool IsEndingScene(string sceneLower)
         {
-            return sceneLower.Contains("ending") ||
-                   sceneLower == "plaguending" ||
+            return sceneLower == "plaguending" ||
                    sceneLower == "spaceending" ||
-                   sceneLower == "truending" ||
-                   sceneLower == "winroom1" ||
-                   sceneLower == "credits";
+                   sceneLower == "truending";
         }
 
         private void Update()
