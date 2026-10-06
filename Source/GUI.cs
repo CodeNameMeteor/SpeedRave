@@ -98,6 +98,7 @@ namespace SpeedRave
         private static bool configShowGUI = false;
         private Vector2 configScroll = Vector2.zero;
         private Vector2 sceneScroll = Vector2.zero;
+        private Vector2 mainScroll = Vector2.zero;
 
         private int sceneIndex = 0;
 
@@ -105,13 +106,13 @@ namespace SpeedRave
         private const int SCENE_WINDOW_ID = 1;
         private const int CONFIG_WINDOW_ID = 2;
 
-        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, 500);
+        private static Rect configWinRect = new Rect(X + WIDTH + 20, Y, 320, ConfigWindowHeight);
         private static Rect winRect = new(X, Y, WIDTH, HEIGHT);
         private static Rect sceneWinRect = new(
             winRect.x + winRect.width + 10,
             winRect.y,
-            1100,
-            350
+            SceneWindowWidth,
+            SceneWindowHeight
         );
 
         public static bool locked = false;
@@ -244,6 +245,21 @@ namespace SpeedRave
             }
         }
 
+        private const float WindowMargin = 5f;
+        private const float SceneWindowWidth = 1100f;
+        private const float SceneWindowHeight = 350f;
+        private const float ConfigWindowHeight = 500f;
+        private static readonly string WindowTitle = Plugin.modName + " " + Plugin.modVersion;
+
+        // Keeps a window fully on screen (e.g. the room selector, which opens below the main window and used
+        // to land off the bottom of 720p screens with no way to drag it back).
+        private static Rect ClampToScreen(Rect rect, float screenW, float screenH)
+        {
+            rect.x = Mathf.Clamp(rect.x, 0f, Mathf.Max(0f, screenW - rect.width));
+            rect.y = Mathf.Clamp(rect.y, 0f, Mathf.Max(0f, screenH - rect.height));
+            return rect;
+        }
+
         private static float UiScale => Mathf.Clamp(Plugin.UIScale.Value, 0.5f, 3f);
 
         private void DrawScaledGUI()
@@ -255,16 +271,24 @@ namespace SpeedRave
 
             if (showGUI)
             {
-                winRect = GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, $"{Plugin.modName} {Plugin.modVersion}");
+                // Screen size in the scaled GUI coordinate space.
+                float screenW = Screen.width / UiScale;
+                float screenH = Screen.height / UiScale;
+
+                winRect.height = Mathf.Min(HEIGHT, screenH - 2 * WindowMargin);
+                winRect = ClampToScreen(GUI.Window(MAIN_WINDOW_ID, winRect, WinProc, WindowTitle), screenW, screenH);
 
                 if (sceneSelectorShowGUI)
                 {
-                    sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
+                    sceneWinRect.width = Mathf.Min(SceneWindowWidth, screenW - 2 * WindowMargin);
+                    sceneWinRect.height = Mathf.Min(SceneWindowHeight, screenH - 2 * WindowMargin);
+                    sceneWinRect = ClampToScreen(GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector"), screenW, screenH);
                 }
 
                 if (configShowGUI)
                 {
-                    configWinRect = GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config");
+                    configWinRect.height = Mathf.Min(ConfigWindowHeight, screenH - 2 * WindowMargin);
+                    configWinRect = ClampToScreen(GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config"), screenW, screenH);
                 }
             }
         }
@@ -503,6 +527,8 @@ namespace SpeedRave
 
         private void WinProc(int id)
         {
+            // Scrollable so nothing is cut off when the window is shrunk to fit a short screen.
+            mainScroll = GUILayout.BeginScrollView(mainScroll);
             if (Plugin.AutosplitterEnabled.Value)
             {
                 GUILayout.Label("<b>Autosplitter</b>");
@@ -656,6 +682,7 @@ namespace SpeedRave
             }
             GUILayout.EndHorizontal();
 
+            GUILayout.EndScrollView();
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
         }
 
