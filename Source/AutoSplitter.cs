@@ -153,8 +153,12 @@ namespace SpeedRave
                     IsConnectedToLivesplit = true;
                     Debug.Log("[SpeedRave] Connected to LiveSplit!");
 
-                    // Start background reader to drain LiveSplit responses
-                    _ = Task.Run(() => ReadLoopAsync(stream, netCts.Token));
+                    // Start background reader to drain LiveSplit responses. Capture the stream and token now:
+                    // the lambda runs later on a thread-pool thread, when the fields may already be cleared or
+                    // belong to a newer connection.
+                    NetworkStream readStream = stream;
+                    CancellationToken readToken = netCts.Token;
+                    _ = Task.Run(() => ReadLoopAsync(readStream, readToken));
 
                     SyncRunStateAfterConnect();
                 }
