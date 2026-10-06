@@ -178,7 +178,7 @@ namespace SpeedRave
                 timerStyle.normal.textColor = Color.white;
             }
 
-            string formattedTime = FormatTime(CurrentTime);
+            string formattedTime = FormatTime(Elapsed);
 
             // Compute fixed total width for the formatted string
             float totalWidth = 0f;
@@ -224,13 +224,12 @@ namespace SpeedRave
             return c.ToString();
         }
 
-        private string FormatTime(float seconds)
+        // Formats straight from the TimeSpan. TimeSpan.FromSeconds(float) rounds to the nearest millisecond,
+        // which combined with separately truncated hundredths could briefly show a time ~1s ahead.
+        private string FormatTime(TimeSpan ts)
         {
-            if (seconds < 0f) seconds = 0f;
-            TimeSpan ts = TimeSpan.FromSeconds(seconds);
-            int hundredths = (int)((seconds % 1f) * 100f);
-            if (hundredths < 0) hundredths = 0;
-            if (hundredths > 99) hundredths = 99;
+            if (ts < TimeSpan.Zero) ts = TimeSpan.Zero;
+            int hundredths = ts.Milliseconds / 10;
 
             if (ts.TotalHours >= 1)
             {
