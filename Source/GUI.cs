@@ -245,15 +245,11 @@ namespace SpeedRave
 
                 if (sceneSelectorShowGUI)
                 {
-                    sceneWinRect.x = winRect.x;
-                    sceneWinRect.y = winRect.y + winRect.height + 10;
                     sceneWinRect = GUI.Window(SCENE_WINDOW_ID, sceneWinRect, SceneWinProc, "Room Selector");
                 }
 
                 if (configShowGUI)
                 {
-                    configWinRect.x = winRect.x + winRect.width + 10;
-                    configWinRect.y = winRect.y;
                     configWinRect = GUI.Window(CONFIG_WINDOW_ID, configWinRect, ConfigWinProc, "SpeedRave Config");
                 }
             }
@@ -586,6 +582,12 @@ namespace SpeedRave
                 if (GUILayout.Button(sceneSelectorShowGUI ? "Close Selector" : "Open Room Selector"))
                 {
                     sceneSelectorShowGUI = !sceneSelectorShowGUI;
+                    if (sceneSelectorShowGUI)
+                    {
+                        // Place it under the main window when opened; after that it can be dragged freely.
+                        sceneWinRect.x = winRect.x;
+                        sceneWinRect.y = winRect.y + winRect.height + 10;
+                    }
                 }
 
                 GUILayout.Space(5);
@@ -627,6 +629,12 @@ namespace SpeedRave
             if (GUILayout.Button(configShowGUI ? "Close Config" : "Open Config UI"))
             {
                 configShowGUI = !configShowGUI;
+                if (configShowGUI)
+                {
+                    // Place it beside the main window when opened; after that it can be dragged freely.
+                    configWinRect.x = winRect.x + winRect.width + 10;
+                    configWinRect.y = winRect.y;
+                }
             }
             GUILayout.EndHorizontal();
 
