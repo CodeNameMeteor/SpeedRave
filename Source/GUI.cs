@@ -137,23 +137,8 @@ namespace SpeedRave
 
         private static bool SafeGetKeyDown(string bind)
         {
-            if (string.IsNullOrWhiteSpace(bind)) return false;
-            try
-            {
-                return Input.GetKeyDown(bind.Trim().ToLowerInvariant());
-            }
-            catch (ArgumentException)
-            {
-                // Unknown key name. Warn once per name rather than every frame.
-                if (reportedInvalidBinds.Add(bind))
-                {
-                    Debug.LogWarning($"[SpeedRave] '{bind}' is not a valid key name; that bind is ignored.");
-                }
-                return false;
-            }
+            return KeyBinds.GetKeyDown(bind);
         }
-
-        private static readonly HashSet<string> reportedInvalidBinds = new HashSet<string>();
 
         private void Start()
         {

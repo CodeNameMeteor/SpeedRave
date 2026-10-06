@@ -93,6 +93,7 @@
   <ItemGroup>
     <Compile Include="AutoSplitter.cs" />
     <Compile Include="InventoryOverlay.cs" />
+    <Compile Include="KeyBinds.cs" />
     <Compile Include="OnScreenTimer.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="ReferenceManager.cs" />
