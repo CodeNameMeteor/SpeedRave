@@ -11,7 +11,7 @@
  * Pressing E and ESC will return the player back to the title screen (Enabled By Default)
  * Pressing Space in the main menu will start the game (Enabled By Default)
  * Remove Music (Disabled By Default)
- * Clear Save on New Game (Disabled By Default)
+ * Clear Save on New Game and Instant Restart (Enabled By Default, so every run starts from a fresh save)
  * Instant Restart Run (Default hotkey: ``F6``)
 
 # Installation

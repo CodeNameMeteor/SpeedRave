@@ -83,7 +83,7 @@ namespace SpeedRave
 
             // --- Binding Values ---
             QuitToMenu = Config.Bind("Patches", "Quit To Menu", true);
-            ClearSaveOnStart = Config.Bind("Patches", "Clear Save On Start", true);
+            ClearSaveOnStart = Config.Bind("Patches", "Clear Save On Start", true, "Clear the game's save (via the game's own ClearSaveData) when starting a new game or using Instant Restart, so every run starts fresh. Game settings are not affected.");
             RemoveMusic = Config.Bind("Patches", "Remove Music", false);
             QuickStart = Config.Bind("Patches", "QuickStart", true);
 
