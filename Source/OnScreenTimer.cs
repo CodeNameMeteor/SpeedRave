@@ -194,12 +194,10 @@ namespace SpeedRave
             timerStyle.fontSize = fontSize;
             shadowStyle.fontSize = fontSize;
 
-            Font activeFont = InventoryOverlay.GameFont;
-            if (activeFont != null)
-            {
-                timerStyle.font = activeFont;
-                shadowStyle.font = activeFont;
-            }
+            // null = Unity's default font (when the game font is off or not found yet).
+            Font activeFont = InventoryOverlay.DisplayFont;
+            timerStyle.font = activeFont;
+            shadowStyle.font = activeFont;
 
             UpdateMetrics(fontSize, activeFont);
 

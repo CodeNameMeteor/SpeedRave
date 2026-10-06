@@ -308,11 +308,8 @@ namespace SpeedRave
                 seedFlashShadowStyle.fontStyle = FontStyle.Bold;
             }
 
-            if (InventoryOverlay.GameFont != null)
-            {
-                seedFlashStyle.font = InventoryOverlay.GameFont;
-                seedFlashShadowStyle.font = InventoryOverlay.GameFont;
-            }
+            seedFlashStyle.font = InventoryOverlay.DisplayFont;
+            seedFlashShadowStyle.font = InventoryOverlay.DisplayFont;
 
             float timeLeft = seedFlashTimer - Time.unscaledTime;
             float alpha = Mathf.Clamp01(timeLeft / 0.25f);
@@ -389,6 +386,7 @@ namespace SpeedRave
             Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
 
             GUILayout.Label("<b>Accessibility</b>");
+            Plugin.UseGameFont.Value = GUILayout.Toggle(Plugin.UseGameFont.Value, " Use Game Font (off = plain font)");
             GUILayout.Label($"UI Scale: {Plugin.UIScale.Value:F2}");
             Plugin.UIScale.Value = (float)Math.Round(GUILayout.HorizontalSlider(Plugin.UIScale.Value, 0.5f, 3f) * 20f) / 20f;
 

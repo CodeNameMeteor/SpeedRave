@@ -121,11 +121,8 @@ namespace SpeedRave.Patches
                 if (seedSTM != null)
                 {
                     seedSTM.text = "Seed: " + Seed;
-                    seedSTM.transform.localPosition = new Vector3(
-                        (seedSTM.transform.localPosition.x - Screen.width / 2f) + 100f, 
-                        -Screen.height / 2f,
-                        seedSTM.transform.localPosition.z
-                    );
+                    seedTextBaseX = seedSTM.transform.localPosition.x;
+                    PositionSeedText(seedSTM.transform);
                 }
             }
         }
@@ -140,8 +137,29 @@ namespace SpeedRave.Patches
                 if (seedSTM != null)
                 {
                     seedSTM.text = "Seed: " + Seed;
+                    if (Screen.width != seedTextScreenWidth || Screen.height != seedTextScreenHeight)
+                    {
+                        PositionSeedText(seedSTM.transform);
+                    }
                 }
             }
+        }
+
+        // The inventory seed text is placed relative to the screen size, so it is re-placed when the
+        // resolution changes rather than staying where the size at FoodControl.Start put it.
+        private static float seedTextBaseX;
+        private static int seedTextScreenWidth;
+        private static int seedTextScreenHeight;
+
+        private static void PositionSeedText(Transform seedTransform)
+        {
+            seedTextScreenWidth = Screen.width;
+            seedTextScreenHeight = Screen.height;
+            seedTransform.localPosition = new Vector3(
+                (seedTextBaseX - Screen.width / 2f) + 100f,
+                -Screen.height / 2f,
+                seedTransform.localPosition.z
+            );
         }
 
         [HarmonyPatch(typeof(TitleScreenControler), "Update")]

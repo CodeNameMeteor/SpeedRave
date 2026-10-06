@@ -12,6 +12,10 @@ namespace SpeedRave
     {
         // Flags
         public static Font GameFont { get; private set; }
+
+        // The font the timer, overlay and seed flash draw with: the game's decorative font, or Unity's plain
+        // default font (null) when Use Game Font is off.
+        public static Font DisplayFont => Plugin.UseGameFont.Value ? GameFont : null;
         private bool fontFound = false;
         private float lastFontSearchTime = -10f;
         private const float FontSearchCooldown = 5f;
@@ -169,8 +173,6 @@ namespace SpeedRave
                 string fName = font.name.ToLowerInvariant();
                 if (fName.Contains("autumn") || fName.Contains("larua"))
                 {
-                    textStyle.font = font;
-                    shadowStyle.font = font;
                     GameFont = font;
                     fontFound = true;
                     break;
@@ -264,6 +266,8 @@ namespace SpeedRave
         {
             if (!Plugin.InventoryOverlayEnabled.Value || !initialized || foodControl == null || foodControl.display || textStyle == null) return;
 
+            textStyle.font = DisplayFont;
+            shadowStyle.font = DisplayFont;
             int targetFontSize = (int)Plugin.TextHeight.Value;
             textStyle.fontSize = targetFontSize;
             shadowStyle.fontSize = targetFontSize;
