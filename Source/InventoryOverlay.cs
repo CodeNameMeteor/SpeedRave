@@ -28,9 +28,9 @@ namespace SpeedRave
         // Data Structures
         private class ItemDef
         {
-            public string boolFieldName;
+            // Direct read of the FoodControl flag; these fields are public, so no per-frame reflection or boxing.
+            public Func<FoodControl, bool> hasItem;
             public string objectFieldName;
-            public FieldInfo boolField;
             public FieldInfo objectField;
 
             public Texture texture;
@@ -82,23 +82,23 @@ namespace SpeedRave
 
         private void Start()
         {
-            AddItemDef("haveKey", "key");
-            AddItemDef("hasDuck", "ducky");
-            AddItemDef("hasPizza", "pizza");
-            AddItemDef("hasMug", "mug");
-            AddItemDef("hasPyramid", "pyramid");
-            AddItemDef("hasBottlecap", "bottlecap");
+            AddItemDef(fc => fc.haveKey, "key");
+            AddItemDef(fc => fc.hasDuck, "ducky");
+            AddItemDef(fc => fc.hasPizza, "pizza");
+            AddItemDef(fc => fc.hasMug, "mug");
+            AddItemDef(fc => fc.hasPyramid, "pyramid");
+            AddItemDef(fc => fc.hasBottlecap, "bottlecap");
 
             AttemptFindFont();
         }
 
-        private void AddItemDef(string boolField, string objField)
+        private void AddItemDef(Func<FoodControl, bool> hasItem, string objField)
         {
             allItems.Add(new ItemDef
             {
-                boolFieldName = boolField,
+                hasItem = hasItem,
                 objectFieldName = objField,
-                boolField = typeof(FoodControl).GetField(boolField),
+                // Only read once while finding the item's sprite, so reflection is fine here.
                 objectField = typeof(FoodControl).GetField(objField)
             });
         }
@@ -240,20 +240,17 @@ namespace SpeedRave
 
             foreach (var item in allItems)
             {
-                if (item.boolField != null)
-                {
-                    bool hasItem = (bool)item.boolField.GetValue(foodControl);
+                bool hasItem = item.hasItem(foodControl);
 
-                    if (hasItem && !item.isCollected)
-                    {
-                        item.isCollected = true;
-                        collectedItems.Add(item);
-                    }
-                    else if (!hasItem && item.isCollected)
-                    {
-                        item.isCollected = false;
-                        collectedItems.Remove(item);
-                    }
+                if (hasItem && !item.isCollected)
+                {
+                    item.isCollected = true;
+                    collectedItems.Add(item);
+                }
+                else if (!hasItem && item.isCollected)
+                {
+                    item.isCollected = false;
+                    collectedItems.Remove(item);
                 }
             }
         }
