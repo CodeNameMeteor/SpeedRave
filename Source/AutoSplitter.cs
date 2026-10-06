@@ -57,6 +57,8 @@ namespace SpeedRave
         public bool IsConnectedToLivesplit { get; private set; } = false;
         private readonly string ipAddress = "127.0.0.1"; 
         private readonly int port = 16834;
+        // Writes happen on Unity's main thread. Without a timeout a peer that stops reading could freeze the game.
+        private const int SendTimeoutMs = 1000;
         private TcpClient client = null;
         private NetworkStream stream = null;
         private readonly object streamLock = new object();
@@ -149,6 +151,7 @@ namespace SpeedRave
 
                 netCts = new CancellationTokenSource();
                 client = new TcpClient();
+                client.SendTimeout = SendTimeoutMs;
                 await client.ConnectAsync(ipAddress, port);
 
                 if (client.Connected)
