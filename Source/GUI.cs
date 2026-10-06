@@ -429,6 +429,7 @@ namespace SpeedRave
             Plugin.TrainerEnabled.Value = GUILayout.Toggle(Plugin.TrainerEnabled.Value, " Enable Trainer");
 
             GUILayout.Label("<b>Trainer Binds</b>");
+            GUILayout.Label("Key names: letters, digits, F1-F12, Insert, Space, left shift, up, [1] (keypad), joystick button 0-19. Leave empty to unbind.");
             BindField("Add Cheese Bind:", Plugin.AddCheeseBind);
             BindField("Remove Cheese Bind:", Plugin.RemoveCheeseBind);
             BindField("Add Fruit Bind:", Plugin.AddFruitBind);
@@ -495,21 +496,29 @@ namespace SpeedRave
                 text = current;
             }
             text = GUILayout.TextField(text);
+            bool valid = string.IsNullOrWhiteSpace(text) || KeyBinds.TryParse(text, out _);
             if (text != current)
             {
                 pendingBinds[entry] = text;
+                GUI.enabled = valid;
                 if (GUILayout.Button("Apply", GUILayout.Width(60)))
                 {
                     entry.Value = text.Trim();
                     pendingBinds.Remove(entry);
                     GUIUtility.keyboardControl = 0;
                 }
+                GUI.enabled = true;
             }
             else
             {
                 pendingBinds.Remove(entry);
             }
             GUILayout.EndHorizontal();
+
+            if (!valid)
+            {
+                GUILayout.Label("<color=#FF6666>Unknown key name</color>");
+            }
         }
 
         private void SceneWinProc(int id)
