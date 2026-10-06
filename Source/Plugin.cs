@@ -64,6 +64,8 @@ namespace SpeedRave
 
         public static ConfigEntry<bool> VSyncEnabled;
 
+        public static ConfigEntry<float> UIScale;
+
         // In your Plugin class
         public static ConfigEntry<int> TargetFPS;
 
@@ -121,6 +123,8 @@ namespace SpeedRave
             IconSize = Config.Bind("Inventory Overlay", "Icon Size", 60f);
             TextHeight = Config.Bind("Inventory Overlay", "Text Height", 50f);
             Padding = Config.Bind("Inventory Overlay", "Icon Padding", 10f);
+
+            UIScale = Config.Bind("Accessibility", "UI Scale", 1f, new ConfigDescription("Size of the trainer windows and the seed flash (1 = normal, 2 = double).", new AcceptableValueRange<float>(0.5f, 3f)));
 
             TargetFPS = Config.Bind("Performance", "TargetFPS", -1, "Target framerate (-1 for uncapped)");
             VSyncEnabled = Config.Bind("Performance", "VSyncEnabled", true, "Enable or disable V-Sync");

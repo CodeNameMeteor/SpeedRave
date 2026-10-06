@@ -230,6 +230,24 @@ namespace SpeedRave
 
         private void OnGUI()
         {
+            // Scale the trainer windows and seed flash by the UI Scale setting (for high- or low-DPI screens).
+            Matrix4x4 previousMatrix = GUI.matrix;
+            float scale = UiScale;
+            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+            try
+            {
+                DrawScaledGUI();
+            }
+            finally
+            {
+                GUI.matrix = previousMatrix;
+            }
+        }
+
+        private static float UiScale => Mathf.Clamp(Plugin.UIScale.Value, 0.5f, 3f);
+
+        private void DrawScaledGUI()
+        {
             if (Time.unscaledTime < seedFlashTimer && !string.IsNullOrEmpty(seedFlashText))
             {
                 DrawSeedFlash();
@@ -342,6 +360,10 @@ namespace SpeedRave
 
             GUILayout.Label($"Item Padding: {Plugin.Padding.Value:F0}");
             Plugin.Padding.Value = GUILayout.HorizontalSlider(Plugin.Padding.Value, 10f, 150f);
+
+            GUILayout.Label("<b>Accessibility</b>");
+            GUILayout.Label($"UI Scale: {Plugin.UIScale.Value:F2}");
+            Plugin.UIScale.Value = (float)Math.Round(GUILayout.HorizontalSlider(Plugin.UIScale.Value, 0.5f, 3f) * 20f) / 20f;
 
             GUILayout.Label("<b>Performance</b>");
             bool currentVSync = Plugin.VSyncEnabled.Value;
