@@ -42,7 +42,6 @@ namespace SpeedRave
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             string sceneName = scene.name;
-            string sceneLower = sceneName.ToLower();
 
             if (sceneName == "Sewer_Start" && mode == LoadSceneMode.Single)
             {
@@ -52,10 +51,7 @@ namespace SpeedRave
             {
                 ResetTimer();
             }
-            else if (IsEndingScene(sceneLower))
-            {
-                StopTimer();
-            }
+            // Endings are handled by Autosplitter.HandleEnding, which decides whether the run is over.
         }
 
         public static bool IsEndingScene(string sceneLower)

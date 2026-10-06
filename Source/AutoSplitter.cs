@@ -18,10 +18,11 @@ namespace SpeedRave
         public static bool isLoading = false;
         public static bool justLoadedScene = false;
         public static int endingCount = 0;
+        public static bool runFinished = false;
 
         public static void NotifyLoadingStarted()
         {
-            if (isLoading) return;
+            if (isLoading || runFinished) return;
             isLoading = true;
             justLoadedScene = false;
             OnScreenTimer.PauseTimer();
@@ -345,7 +346,7 @@ namespace SpeedRave
 
         public void HandleEnding(string sceneLower)
         {
-            if (!gameStarted) return;
+            if (!gameStarted || runFinished) return;
 
             bool shouldSplit = false;
             if (sceneLower == "plaguending" && !plagueEnding)
@@ -364,14 +365,43 @@ namespace SpeedRave
                 shouldSplit = true;
             }
 
-            if (shouldSplit)
+            if (!shouldSplit)
             {
-                endingCount++;
-                OnScreenTimer.StopTimer();
-                AttemptSendCommand("split");
-                //AttemptSendCommand($"setgametime {OnScreenTimer.CurrentTime:F2}");
-                AttemptSendCommand("pausegametime");
+                if (sceneLower == "plaguending" || sceneLower == "spaceending" || sceneLower == "truending")
+                {
+                    // An ending that was already split: treat it like any other room so the loading pause ends.
+                    justLoadedScene = true;
+                }
+                else
+                {
+                    OnScreenTimer.StopTimer();
+                }
+                return;
             }
+
+            endingCount++;
+            AttemptSendCommand("split");
+
+            bool runComplete = !Plugin.AllEndings.Value || (plagueEnding && spaceEnding && trueEnding);
+            if (runComplete)
+            {
+                FinishRun();
+            }
+            else
+            {
+                // More endings to go: the run continues, so let the loading pause end as for a normal room.
+                justLoadedScene = true;
+            }
+        }
+
+        // Ends the run: both timers stop and stay stopped until the next reset or start.
+        private void FinishRun()
+        {
+            runFinished = true;
+            OnScreenTimer.StopTimer();
+            isLoading = false;
+            justLoadedScene = false;
+            SendPauseGameTimeImmediate();
         }
 
         public void UpdateAutosplitter()
@@ -388,13 +418,6 @@ namespace SpeedRave
             if (currentScene == "Sewer_Start" && !gameStarted)
             {
                 StartRun();
-            }
-
-            // Ending fallback check
-            string sceneLower = currentScene.ToLower();
-            if (gameStarted && OnScreenTimer.IsEndingScene(sceneLower))
-            {
-                HandleEnding(sceneLower);
             }
 
             // Split Logic
@@ -430,7 +453,11 @@ namespace SpeedRave
                 }
             }
 
-            // Loading Logic
+            // Loading Logic (once the run is finished, game time stays paused)
+            if (runFinished)
+            {
+                return;
+            }
             if (isLoading && !timerPaused)
             {
                 SendPauseGameTimeImmediate();
@@ -455,6 +482,7 @@ namespace SpeedRave
             spaceEnding = false;
             trueEnding = false;
             endingCount = 0;
+            runFinished = false;
         }
 
         public void OnApplicationQuit()

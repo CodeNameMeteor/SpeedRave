@@ -300,6 +300,7 @@ namespace SpeedRave
             Plugin.KeySplit.Value = GUILayout.Toggle(Plugin.KeySplit.Value, " Split on Key");
             Plugin.TwentyFruitSplit.Value = GUILayout.Toggle(Plugin.TwentyFruitSplit.Value, " Split on 20 Fruit");
             Plugin.ItemSplit.Value = GUILayout.Toggle(Plugin.ItemSplit.Value, " Split on Item Pickup");
+            Plugin.AllEndings.Value = GUILayout.Toggle(Plugin.AllEndings.Value, " All Endings (run ends after all 3)");
             Plugin.LiveSplitAutoReconnect.Value = GUILayout.Toggle(Plugin.LiveSplitAutoReconnect.Value, " Auto-Reconnect LiveSplit (Every 6s)");
 
             GUILayout.Space(10);

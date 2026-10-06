@@ -36,6 +36,7 @@ namespace SpeedRave
         public static ConfigEntry<bool> TwentyFruitSplit;
         public static ConfigEntry<bool> KeySplit;
         public static ConfigEntry<bool> ItemSplit;
+        public static ConfigEntry<bool> AllEndings;
 
         public static ConfigEntry<string> AddCheeseBind;
         public static ConfigEntry<string> RemoveCheeseBind;
@@ -95,6 +96,7 @@ namespace SpeedRave
             TwentyFruitSplit = Config.Bind("AutoSplitter", "Twenty Fruit Split", false);
             KeySplit = Config.Bind("AutoSplitter", "Key Split", false);
             ItemSplit = Config.Bind("AutoSplitter", "Item Split", false);
+            AllEndings = Config.Bind("AutoSplitter", "All Endings", false, "Keep the run going after an ending. The run (and the timers) only finish once all three endings have been reached.");
 
             AddCheeseBind = Config.Bind("Binds", "Add Cheese Bind", "U");
             RemoveCheeseBind = Config.Bind("Binds", "Remove Cheese Bind", "I");
