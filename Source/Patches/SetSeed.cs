@@ -55,7 +55,9 @@ namespace SpeedRave.Patches
         [HarmonyPatch(typeof(SelectNPCScript), "Start")]
         [HarmonyPatch(typeof(SpawnPointScript), "Start")]
         [HarmonyPatch(typeof(WalkUpDialogue), "Start")]
-        [HarmonyPostfix]
+        // A finalizer rather than a postfix: it also runs when the patched Start() throws, so stateDepth can't
+        // leak and leave Unity's global RNG swapped to the seeded stream for the rest of the session.
+        [HarmonyFinalizer]
         public static void RestoreState()
         {
             if (Plugin.SeedEnabled.Value)
