@@ -84,7 +84,7 @@ namespace SpeedRave
             // --- Binding Values ---
             QuitToMenu = Config.Bind("Patches", "Quit To Menu", true);
             ClearSaveOnStart = Config.Bind("Patches", "Clear Save On Start", true, "Clear the game's save (via the game's own ClearSaveData) when starting a new game or using Instant Restart, so every run starts fresh. Game settings are not affected.");
-            RemoveMusic = Config.Bind("Patches", "Remove Music", false);
+            RemoveMusic = Config.Bind("Patches", "Remove Music", false, "Mute all looping audio while enabled. This is mostly music, but looping ambience is muted too. Turning it off restores the original volumes.");
             QuickStart = Config.Bind("Patches", "QuickStart", true);
 
             SeedEnabled = Config.Bind("Seeding", "Set Seed", true);
@@ -134,6 +134,7 @@ namespace SpeedRave
             _mod.AddComponent<Autosplitter>();
             _mod.AddComponent<InventoryOverlay>();
             _mod.AddComponent<OnScreenTimer>();
+            _mod.AddComponent<MusicMuter>();
             GameObject.DontDestroyOnLoad(_mod);
             ReferenceManager.Initialize();
 
