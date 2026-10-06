@@ -1,6 +1,6 @@
 # Releasing SpeedRave
 
-1. Update `modVersion` in `Source/Plugin.cs` and the versions in `Source/Properties/AssemblyInfo.cs` to the same number.
+1. Update `modVersion` in `Source/Plugin.cs`. The DLL's assembly and file versions are taken from it automatically.
 2. Build in **Release** configuration (see the build notes in `README.md`).
 3. Zip the release so it extracts into `<game folder>/SewerRaveWindows/BepInEx`, as the README describes:
    - `plugins/SpeedRave.dll`
