@@ -481,7 +481,6 @@ namespace SpeedRave
                     if (int.TryParse(seedInput, out parsedSeed))
                     {
                         Patches.SetSeedPatchs.Seed = parsedSeed;
-                        UnityEngine.Random.InitState(parsedSeed);
                         Patches.SetSeedPatchs.randomSeed = false;
                     }
                 }
@@ -507,7 +506,6 @@ namespace SpeedRave
                     if (int.TryParse(clip, out int pastedSeed))
                     {
                         Patches.SetSeedPatchs.Seed = pastedSeed;
-                        UnityEngine.Random.InitState(pastedSeed);
                         Patches.SetSeedPatchs.randomSeed = false;
                         seedInput = pastedSeed.ToString();
                         seedFeedbackMessage = "✓ Seed pasted from clipboard!";
@@ -706,10 +704,9 @@ namespace SpeedRave
 
             if (Plugin.SeedEnabled.Value)
             {
-                if (Patches.SetSeedPatchs.randomSeed)
-                {
-                    Patches.SetSeedPatchs.Init();
-                }
+                // Always re-seed: a new seed in random mode, and a rewind of the seeded RNG stream to the
+                // same seed in set-seed mode (otherwise the stream continues from the previous attempt).
+                Patches.SetSeedPatchs.Init();
                 seedFlashText = $"Seed: {Patches.SetSeedPatchs.Seed}";
                 seedFlashMode = Patches.SetSeedPatchs.randomSeed ? "Random Seed" : "Set Seed";
                 seedFlashTimer = Time.unscaledTime + 1.0f;
