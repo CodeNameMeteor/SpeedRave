@@ -21,6 +21,8 @@ namespace SpeedRave
 
         private GUIStyle timerStyle;
         private GUIStyle shadowStyle;
+        private GUIStyle stateStyle;
+        private GUIStyle stateShadowStyle;
 
         private int lastFontSize = -1;
         private Font lastFont = null;
@@ -63,6 +65,12 @@ namespace SpeedRave
             shadowStyle = new GUIStyle();
             shadowStyle.normal.textColor = Color.black;
             shadowStyle.alignment = TextAnchor.MiddleCenter;
+
+            stateStyle = new GUIStyle();
+            stateStyle.alignment = TextAnchor.UpperRight;
+            stateShadowStyle = new GUIStyle();
+            stateShadowStyle.normal.textColor = Color.black;
+            stateShadowStyle.alignment = TextAnchor.UpperRight;
 
             // Starting, resetting and stopping the timer is driven by Autosplitter (StartRun, ResetRun,
             // HandleEnding) so the on-screen timer and LiveSplit always agree.
@@ -238,6 +246,28 @@ namespace SpeedRave
 
                 currentX += slotWidth;
             }
+
+            DrawStateText(startX, y + height, totalWidth, fontSize);
+        }
+
+        // Optional text cue under the timer, so the loading/finished state isn't shown by colour alone.
+        private void DrawStateText(float x, float y, float width, int timerFontSize)
+        {
+            if (!Plugin.ShowTimerStateText.Value) return;
+
+            string state = IsEnded ? "FINISHED" : Autosplitter.isLoading ? "LOADING" : null;
+            if (state == null) return;
+
+            int fontSize = Mathf.Max(12, timerFontSize / 2);
+            stateStyle.fontSize = fontSize;
+            stateShadowStyle.fontSize = fontSize;
+            stateStyle.font = timerStyle.font;
+            stateShadowStyle.font = timerStyle.font;
+            stateStyle.normal.textColor = timerStyle.normal.textColor;
+
+            Rect rect = new Rect(x, y, width, fontSize + 6f);
+            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), state, stateShadowStyle);
+            GUI.Label(rect, state, stateStyle);
         }
 
         private static readonly string[] DigitStrings = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };

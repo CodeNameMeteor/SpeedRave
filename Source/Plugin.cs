@@ -54,6 +54,7 @@ namespace SpeedRave
 
         public static ConfigEntry<bool> ShowOnScreenTimer;
         public static ConfigEntry<float> TimerFontSize;
+        public static ConfigEntry<bool> ShowTimerStateText;
 
         public static ConfigEntry<bool> InventoryOverlayEnabled;
         public static ConfigEntry<bool> UseIcons;
@@ -116,6 +117,7 @@ namespace SpeedRave
 
             ShowOnScreenTimer = Config.Bind("Timer", "Show On Screen Timer", false, "Display loadless in-game speedrun timer");
             TimerFontSize = Config.Bind("Timer", "Timer Font Size", 40f, "Font size of the on-screen timer");
+            ShowTimerStateText = Config.Bind("Timer", "Show Timer State Text", false, "Show LOADING or FINISHED under the timer as well as changing its colour (yellow while loading, green when finished).");
 
             InventoryOverlayEnabled = Config.Bind("Inventory Overlay", "Enable InventoryOverlay", false);
             UseIcons = Config.Bind("Inventory Overlay", "Use Icons", true);

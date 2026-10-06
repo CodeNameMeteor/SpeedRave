@@ -369,6 +369,7 @@ namespace SpeedRave
             {
                 GUILayout.Label($"Timer Font Size: {Plugin.TimerFontSize.Value:F0}");
                 Plugin.TimerFontSize.Value = GUILayout.HorizontalSlider(Plugin.TimerFontSize.Value, 20f, 80f);
+                Plugin.ShowTimerStateText.Value = GUILayout.Toggle(Plugin.ShowTimerStateText.Value, " Show LOADING / FINISHED text");
             }
 
             GUILayout.Label("<b>Inventory Overlay</b>");
