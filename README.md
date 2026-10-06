@@ -16,7 +16,8 @@
 
 # Installation
 * Download [SpeedRave.zip](https://github.com/CodeNameMeteor/SpeedRave/releases).
-* Download [BepInEx x64](https://github.com/BepInEx/BepInEx/releases/).
+* Download [BepInEx 5 x64](https://github.com/BepInEx/BepInEx/releases/) (the `BepInEx_win_x64_5.4.x` zip). BepInEx 6 is not supported.
+* Optional: check the download. Run `Get-FileHash SpeedRave.zip` in PowerShell and compare the result with the SHA-256 listed in the release notes.
 * Extract Bepinex in the game directory ``<game folder>/SewerRaveWindows``
 * Start The Game once
 * Extract SpeedRave.zip to ``<game folder>/SewerRaveWindows/BepInEx``
