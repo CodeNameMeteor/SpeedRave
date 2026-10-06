@@ -167,6 +167,10 @@ namespace SpeedRave
             {
                 showGUI = !showGUI;
                 GUIUtility.keyboardControl = 0;
+                if (!showGUI)
+                {
+                    Plugin.SaveConfigIfChanged();
+                }
                 if (sceneSelectorShowGUI)
                 {
                     sceneSelectorShowGUI = false;

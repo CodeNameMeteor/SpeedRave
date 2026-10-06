@@ -126,6 +126,11 @@ namespace SpeedRave
             VSyncEnabled = Config.Bind("Performance", "VSyncEnabled", true, "Enable or disable V-Sync");
             Debug = Config.Bind("Debug", "Debug", false, "Enable Debug");
 
+            // By default BepInEx rewrites the whole config file on every change, which happens every frame while
+            // a Config UI slider is dragged. Save explicitly instead (Save button, closing the trainer, quitting).
+            Config.SaveOnConfigSet = false;
+            Config.SettingChanged += (sender, args) => configDirty = true;
+
             QualitySettings.vSyncCount = VSyncEnabled.Value ? 1 : 0;
             Application.targetFrameRate = TargetFPS.Value;
 
@@ -150,11 +155,28 @@ namespace SpeedRave
             harmony.PatchAll(typeof(BlockMovementWhileTyping));
             harmony.PatchAll(typeof(BlockJumpWhileTyping));
         }
+        private static bool configDirty = false;
+
+        // Saves only if a setting changed since the last save.
+        public static void SaveConfigIfChanged()
+        {
+            if (configDirty)
+            {
+                SaveConfig();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            SaveConfigIfChanged();
+        }
+
         public static bool SaveConfig()
         {
             try
             {
                 Instance?.Config?.Save();
+                configDirty = false;
                 if (Plugin.Debug.Value)
                 {
                     UnityEngine.Debug.Log("[SpeedRave] Configuration saved to disk.");
